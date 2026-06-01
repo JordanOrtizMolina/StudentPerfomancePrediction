@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+ 
+# Modelos entrenados
+model/*.pkl
+ 
+# Entornos virtuales
+.venv/
+venv/
+env/
+ 
+# Jupyter
+.ipynb_checkpoints/
+ 
+# IDEs
+.vscode/
+.idea/
+ 
+# Sistema operativo
+.DS_Store
+Thumbs.db
+ 
