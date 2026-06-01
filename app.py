@@ -392,20 +392,24 @@ def aplicar_estilos() -> None:
                 font-weight: 650;
             }
 
+            /* Ensure Streamlit buttons show white text across contexts */
+            .stApp .stButton > button,
+            .stApp .stButton button,
             .stButton > button {
                 background: var(--azul-700);
                 border: 1px solid var(--azul-700);
                 border-radius: 7px;
-                color: #ffffff;
+                color: #ffffff !important;
                 font-weight: 800;
                 min-height: 2.8rem;
                 width: 100%;
             }
 
+            .stApp .stButton > button:hover,
             .stButton > button:hover {
                 background: var(--azul-800);
                 border-color: var(--azul-800);
-                color: #ffffff;
+                color: #ffffff !important;
             }
 
             .tarjeta-resultado {
@@ -527,6 +531,15 @@ def aplicar_estilos() -> None:
                 max-width: 860px;
             }
 
+            .pantalla-inicio-cta {
+                margin-top: 1rem;
+                text-align: center;
+            }
+
+            .pantalla-inicio-cta .stButton > button {
+                max-width: 360px;
+            }
+
             .bloque-inicio {
                 background: #ffffff;
                 border: 1px solid var(--borde);
@@ -547,23 +560,79 @@ def aplicar_estilos() -> None:
                 margin: 0;
             }
 
+            /* Footer: light variant (white background) with contrasted chips */
             .pie-aplicacion {
-                align-items: center;
-                background: var(--azul-900);
+                background: var(--superficie);
+                border: 1px solid var(--borde);
                 border-radius: 8px;
-                color: #d9e8f8;
+                color: var(--gris-900);
                 display: flex;
-                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 0.45rem;
+                align-items: center;
                 margin-top: 1.4rem;
                 padding: 0.9rem 1rem;
+                box-shadow: 0 6px 18px rgba(16, 40, 71, 0.04);
+            }
+
+            .pie-aplicacion-contenido {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0.75rem;
+                width: 100%;
+            }
+
+            .pie-aplicacion-chip {
+                background: var(--azul-050);
+                border: 1px solid var(--borde);
+                border-radius: 999px;
+                color: var(--azul-900);
+                display: inline-flex;
+                font-size: 0.8rem;
+                font-weight: 750;
+                line-height: 1;
+                padding: 0.32rem 0.65rem;
+                white-space: nowrap;
+            }
+
+            .pie-aplicacion-titulo {
+                color: var(--gris-900);
+                font-size: 0.98rem;
+                font-weight: 850;
+                letter-spacing: 0.2px;
+            }
+
+            .pie-aplicacion-autor-chip {
+                background: var(--azul-050);
+                border-color: var(--borde);
+                box-shadow: none;
+                color: var(--azul-900);
+            }
+
+            .pie-aplicacion-autores {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                gap: 0.35rem;
+                margin-left: auto;
+            }
+
+            .pie-aplicacion-texto-footer {
+                color: var(--gris-700);
+                font-size: 0.82rem;
+                font-weight: 650;
+                letter-spacing: 0.1px;
+                padding: 0.1rem 0;
             }
 
             .pie-aplicacion strong {
-                color: #ffffff;
+                color: var(--azul-900);
             }
 
             .pie-aplicacion span {
-                color: #d9e8f8;
+                color: var(--gris-700);
                 font-size: 0.88rem;
                 font-weight: 650;
             }
@@ -574,6 +643,10 @@ def aplicar_estilos() -> None:
                     align-items: flex-start;
                     flex-direction: column;
                     gap: 0.75rem;
+                }
+
+                .pie-aplicacion-contenido {
+                    width: 100%;
                 }
 
                 .chip-header {
@@ -1054,14 +1127,11 @@ def mostrar_header_aplicacion() -> None:
             <div class="marca-aplicacion">
                 <div class="marca-simbolo">SP</div>
                 <div>
-                    <div class="marca-texto">Predicción Académica</div>
-                    <div class="marca-subtexto">Sistema institucional de Machine Learning</div>
+                    <h1>Predicción de Rendimiento Académico</h1>
                 </div>
             </div>
             <div>
-                <span class="chip-header">33 variables</span>
-                <span class="chip-header">Clasificación multiclase</span>
-                <span class="chip-header">Proyecto universitario</span>
+                <span class="marca-subtexto"> Inteligencia Artificial, 2026</span>
             </div>
         </div>
         """,
@@ -1073,8 +1143,14 @@ def mostrar_footer_aplicacion() -> None:
     st.markdown(
         """
         <div class="pie-aplicacion">
-            <span><strong>Student Performance Prediction</strong> · Proyecto universitario de Machine Learning</span>
-            <span>Dataset UCI · Desertor, Matriculado y Graduado</span>
+            <div class="pie-aplicacion-contenido">
+                <span class="pie-aplicacion-texto-footer">Student Performance Prediction, Proyecto Inteligencia Artificial 2026                           </span>
+                <div class="pie-aplicacion-autores">
+                    <span class="pie-aplicacion-chip pie-aplicacion-autor-chip">Jordan Ortiz Molina</span>
+                    <span class="pie-aplicacion-chip pie-aplicacion-autor-chip">Yenifer Mata Flores</span>
+                    <span class="pie-aplicacion-chip pie-aplicacion-autor-chip">Deyaneira Altamirano Cordero</span>
+                </div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1085,15 +1161,8 @@ def mostrar_pantalla_inicio(modelo: Any, preprocesador: Any) -> None:
     mostrar_header_aplicacion()
     st.markdown(
         f"""
-        <div class="pantalla-inicio">
-            <h1>{TITULO_APP}</h1>
-            <p>{SUBTITULO_APP}</p>
-            <p>
-                Este sistema permite estimar el estado académico probable de un estudiante:
-                desertor, matriculado o graduado. Su propósito es apoyar el análisis
-                institucional y facilitar la identificación temprana de perfiles que podrían
-                requerir acompañamiento académico.
-            </p>
+        <div class="tarjeta-seccion" style="margin-bottom:0.8rem; padding:0.8rem 1rem;">
+            <p style="margin:0; color:var(--gris-600);">Este sistema permite estimar el estado académico probable de un estudiante: desertar, seguir matriculado o graduarse.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1117,8 +1186,7 @@ def mostrar_pantalla_inicio(modelo: Any, preprocesador: Any) -> None:
             """
             <div class="bloque-inicio">
                 <h3>Para qué sirve</h3>
-                <p>Ayuda a presentar un análisis predictivo claro, útil para seguimiento
-                académico, priorización de apoyo y explicación del proyecto de inteligencia artificial.</p>
+                <p>Su propósito es apoyar el análisis institucional y facilitar la identificación temprana de perfiles que podrían requerir acompañamiento académico</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1135,23 +1203,11 @@ def mostrar_pantalla_inicio(modelo: Any, preprocesador: Any) -> None:
             unsafe_allow_html=True,
         )
 
-    st.write("")
-    st.markdown(
-        """
-        <div class="tarjeta-seccion">
-            <h3>Flujo de uso</h3>
-            <p>Presione el botón inferior para ingresar al formulario. En la siguiente pantalla
-            podrá completar las 33 variables reales del modelo y generar la predicción.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    _, centro, _ = st.columns([1, 2, 1])
-    with centro:
-        if st.button("Ir al formulario de predicción", type="primary"):
-            st.session_state["pantalla"] = "prediccion"
-            st.rerun()
+    st.markdown("<div class='pantalla-inicio-cta'>", unsafe_allow_html=True)
+    if st.button("Ir al formulario de predicción", type="primary"):
+        st.session_state["pantalla"] = "prediccion"
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
     mostrar_footer_aplicacion()
 
@@ -1238,14 +1294,19 @@ def main() -> None:
     if st.session_state["pantalla"] == "inicio":
         mostrar_pantalla_inicio(modelo, preprocesador)
         return
+    # Show header and provide navigation back to start
+    mostrar_header_aplicacion()
 
-    volver_col, _ = st.columns([1, 4])
-    with volver_col:
-        if st.button("Volver al inicio"):
-            st.session_state["pantalla"] = "inicio"
-            st.rerun()
+    # Instruction: user must complete the form to generate a prediction
+    st.markdown(
+        """
+        <div class="tarjeta-seccion" style="margin-bottom:0.8rem; padding:0.8rem 1rem;">
+            <p style="margin:0; color:var(--gris-600);">Debe completar el formulario para generar la predicción.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    st.write("")
     valores, generar_prediccion = create_input_form()
 
     st.write("")
@@ -1258,6 +1319,17 @@ def main() -> None:
             st.error(str(exc))
         except Exception:
             st.error("No fue posible generar la predicción. Revise los datos ingresados e inténtelo nuevamente.")
+
+    volver_col, _ = st.columns([1, 4])
+    with volver_col:
+        if st.button("Volver al inicio"):
+            st.session_state["pantalla"] = "inicio"
+            st.rerun()
+
+    st.write("")
+
+    # Footer on form/results screen
+    # mostrar_footer_aplicacion()
 
 
 if __name__ == "__main__":
