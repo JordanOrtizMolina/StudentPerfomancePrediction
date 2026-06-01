@@ -1,12 +1,10 @@
 from __future__ import annotations
-
 from pathlib import Path
 from typing import Any
-
-import joblib
-import numpy as np
-import pandas as pd
 import streamlit as st
+
+from src.prediction import load_model_artifacts, predict_student_status, prepare_input_data
+from src.preprocessing import FEATURE_COLUMNS
 
 
 TITULO_APP = "Sistema de Predicción del Desempeño Estudiantil"
@@ -26,7 +24,7 @@ COLUMNAS_MODELO = [
     "Application mode",
     "Application order",
     "Course",
-    "Daytime/evening attendance\t",
+    "Daytime/evening attendance",
     "Previous qualification",
     "Previous qualification (grade)",
     "Mother's qualification",
@@ -661,14 +659,7 @@ def aplicar_estilos() -> None:
 
 @st.cache_resource(show_spinner=False)
 def load_model() -> tuple[Any, Any]:
-    if not RUTA_MODELO.exists():
-        raise FileNotFoundError(f"No se encontró el archivo del modelo: {RUTA_MODELO}")
-    if not RUTA_PREPROCESADOR.exists():
-        raise FileNotFoundError(f"No se encontró el archivo de preprocesamiento: {RUTA_PREPROCESADOR}")
-
-    modelo = joblib.load(RUTA_MODELO)
-    preprocesador = joblib.load(RUTA_PREPROCESADOR)
-    return modelo, preprocesador
+    return load_model_artifacts(RUTA_MODELO, RUTA_PREPROCESADOR)
 
 
 def selector_categoria(etiqueta: str, opciones: dict[str, int], ayuda: str, valor_inicial: str | None = None) -> int:
@@ -796,7 +787,7 @@ def create_input_form() -> tuple[dict[str, Any], bool]:
                     "Turismo",
                 )
             with col2:
-                valores["Daytime/evening attendance\t"] = selector_categoria(
+                valores["Daytime/evening attendance"] = selector_categoria(
                     "Turno de asistencia",
                     TURNO,
                     "Horario principal de asistencia del estudiante.",
@@ -1032,43 +1023,6 @@ def create_input_form() -> tuple[dict[str, Any], bool]:
     return valores, generar_prediccion
 
 
-def prepare_input_data(valores: dict[str, Any], preprocesador: Any) -> pd.DataFrame:
-    columnas_esperadas = list(getattr(preprocesador, "feature_names_in_", COLUMNAS_MODELO))
-    faltantes = [columna for columna in columnas_esperadas if columna not in valores]
-    if faltantes:
-        raise ValueError(f"Faltan variables requeridas: {', '.join(faltantes)}")
-
-    datos = pd.DataFrame([{columna: valores[columna] for columna in columnas_esperadas}])
-    if datos.shape[1] != 33:
-        raise ValueError(f"El modelo requiere 33 variables, pero se recibieron {datos.shape[1]}.")
-
-    return datos
-
-
-def predict_student_status(
-    modelo: Any, preprocesador: Any, datos: pd.DataFrame
-) -> tuple[str, dict[str, float], float]:
-    datos_transformados = preprocesador.transform(datos)
-    prediccion = str(modelo.predict(datos_transformados)[0])
-
-    probabilidades = {clase: 0.0 for clase in CLASES_MODELO}
-    if hasattr(modelo, "predict_proba"):
-        probabilidades_raw = modelo.predict_proba(datos_transformados)[0]
-        clases_modelo = [str(clase) for clase in getattr(modelo, "classes_", CLASES_MODELO)]
-        probabilidades.update(
-            {
-                clase: float(probabilidad)
-                for clase, probabilidad in zip(clases_modelo, probabilidades_raw)
-            }
-        )
-        confianza = probabilidades.get(prediccion, float(np.max(probabilidades_raw)))
-    else:
-        probabilidades[prediccion] = 1.0
-        confianza = 1.0
-
-    return prediccion, probabilidades, confianza
-
-
 def mostrar_introduccion(modelo: Any) -> None:
     st.markdown(
         f"""
@@ -1144,7 +1098,7 @@ def mostrar_footer_aplicacion() -> None:
         """
         <div class="pie-aplicacion">
             <div class="pie-aplicacion-contenido">
-                <span class="pie-aplicacion-texto-footer">Student Performance Prediction, Proyecto Inteligencia Artificial 2026                           </span>
+                <span class="pie-aplicacion-texto-footer">Student Performance Prediction - Proyecto Inteligencia Artificial</span>
                 <div class="pie-aplicacion-autores">
                     <span class="pie-aplicacion-chip pie-aplicacion-autor-chip">Jordan Ortiz Molina</span>
                     <span class="pie-aplicacion-chip pie-aplicacion-autor-chip">Yenifer Mata Flores</span>
@@ -1312,7 +1266,7 @@ def main() -> None:
     st.write("")
     if generar_prediccion:
         try:
-            datos = prepare_input_data(valores, preprocesador)
+            datos = prepare_input_data(valores)
             prediccion, probabilidades, confianza = predict_student_status(modelo, preprocesador, datos)
             display_results(prediccion, probabilidades, confianza)
         except ValueError as exc:
