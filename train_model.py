@@ -119,7 +119,6 @@ def train_and_select_best_model(
     X_val_lr    = preprocessor_lr.transform(X_val)
     X_test_lr   = preprocessor_lr.transform(X_test)
 
-    # Para LR no necesitamos LabelEncoder para el target; Scikit-learn maneja las etiquetas directamente.
     le = None
 
     # ------------------------------------------------------------------

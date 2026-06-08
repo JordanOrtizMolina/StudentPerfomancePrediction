@@ -14,8 +14,6 @@ from sklearn.preprocessing import (
 
 TARGET_COLUMN = "Target"
 
-# Columnas eliminadas en el notebook (sección 3.1) por baja variabilidad
-# o correlación nula con Target — NO forman parte de FEATURE_COLUMNS.
 COLS_TO_DROP = [
     "Educational special needs",
     "Nacionality",
@@ -29,11 +27,6 @@ COLS_TO_DROP = [
     "Curricular units 2nd sem (without evaluations)",
 ]
 
-# -----------------------------------------------------------------------
-# Clasificación de variables — igual que el notebook (sección 3.4)
-# -----------------------------------------------------------------------
-
-# Variables numéricas con escala real → StandardScaler en LR, passthrough en árboles
 NUMERIC_FEATURES: list[str] = [
     "Previous qualification (grade)",
     "Admission grade",
@@ -48,14 +41,11 @@ NUMERIC_FEATURES: list[str] = [
     "Curricular units 2nd sem (grade)",
 ]
 
-# Variables categóricas codificadas como enteros → encoding explícito
-# Nota: 'Application order' está aquí, no en numéricas (corregido respecto
-# a la versión anterior que la trataba como continua).
 CATEGORICAL_FEATURES: list[str] = [
     "Application mode",
     "Application order",
     "Course",
-    "Daytime/evening attendance",   # el \t del CSV original se normaliza al leer
+    "Daytime/evening attendance",
     "Previous qualification",
     "Mother's qualification",
     "Father's qualification",
@@ -69,7 +59,6 @@ CATEGORICAL_FEATURES: list[str] = [
     "Scholarship holder",
 ]
 
-# Orden canónico de columnas que el preprocesador espera recibir
 FEATURE_COLUMNS: tuple[str, ...] = tuple(NUMERIC_FEATURES + CATEGORICAL_FEATURES)
 
 
@@ -83,7 +72,6 @@ def load_dataset(csv_path: str | Path, *, separator: str = ";") -> pd.DataFrame:
 
 def clean_dataset(df: pd.DataFrame) -> pd.DataFrame:
     cleaned = df.copy()
-    # strip() elimina el \t que tiene 'Daytime/evening attendance' en el CSV original
     cleaned.columns = [str(c).strip() for c in cleaned.columns]
     cleaned = cleaned.drop_duplicates().reset_index(drop=True)
 
@@ -127,7 +115,7 @@ def prepare_training_frame(
 
 
 # -----------------------------------------------------------------------
-# Preprocesadores — uno por familia de modelos (sección 3.5 del notebook)
+# Preprocesadores
 # -----------------------------------------------------------------------
 
 def _make_ohe() -> OneHotEncoder:
@@ -167,9 +155,6 @@ def build_preprocessor_tree(
     )
 
 
-# Alias genérico para compatibilidad con código heredado que importe
-# build_preprocessor sin especificar tipo de modelo.
-# Por defecto devuelve el preprocesador de LR (con escalado).
 def build_preprocessor(
     feature_columns: Sequence[str] = FEATURE_COLUMNS,
     *,

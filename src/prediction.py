@@ -69,13 +69,11 @@ def predict_student_status(
     transformed  = preprocessor.transform(data_frame)
     raw_pred     = model.predict(transformed)[0]
 
-    # Decodificar si el modelo devuelve enteros (XGBoost)
     if label_encoder is not None:
         prediction = str(label_encoder.inverse_transform([int(raw_pred)])[0])
     else:
         prediction = str(raw_pred)
 
-    # Probabilidades por clase
     probabilities: dict[str, float] = {prediction: 1.0}
     confidence: float = 1.0
 
@@ -83,7 +81,6 @@ def predict_student_status(
         proba_array = model.predict_proba(transformed)[0]
 
         if label_encoder is not None:
-            # XGBoost: las clases están en orden numérico codificado
             class_labels = [
                 str(label_encoder.inverse_transform([i])[0])
                 for i in range(len(proba_array))
