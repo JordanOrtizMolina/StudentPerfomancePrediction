@@ -486,19 +486,34 @@ def seccion_personal() -> dict[str, Any]:
 
 
 def seccion_ingreso() -> dict[str, Any]:
-    col1, col2, col3 = st.columns(3)
+    # Fila 1
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
-        am = selector("Modalidad de solicitud", MODALIDAD_SOLICITUD,
-                      "Proceso de admisión utilizado.", "Segunda fase del contingente general")
-        ao = entero("Orden de preferencia", 1, 0, 9, "Posición de esta carrera en la solicitud.")
-        co = selector("Carrera", CARRERAS, "Programa académico seleccionado.", "Turismo")
-    with col2:
+        
         da = selector("Turno", TURNO, "Horario de asistencia.", "Diurno")
-        pq = selector("Calificación previa", CALIFICACION_PREVIA,
-                      "Nivel educativo previo al ingreso.", "Educación secundaria")
+    with col2:
+        
+        ag = decimal("Nota de admisión", 130.0, 0.0, 200.0, "Calificación en el proceso de admisión.")
     with col3:
         pg = decimal("Nota de calificación previa", 130.0, 0.0, 200.0, "Calificación en la formación previa.")
-        ag = decimal("Nota de admisión", 130.0, 0.0, 200.0, "Calificación en el proceso de admisión.")
+    with col4:
+        ao = entero("Orden de preferencia", 1, 0, 9, "Posición de esta carrera en la solicitud.")
+
+    # Fila 2
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        co = selector("Carrera", CARRERAS, "Programa académico seleccionado.", "Turismo")
+        
+        
+    with col2:
+        pq = selector("Calificación previa", CALIFICACION_PREVIA,
+                      "Nivel educativo previo al ingreso.", "Educación secundaria")
+         
+    with col3:
+        am = selector("Modalidad de solicitud", MODALIDAD_SOLICITUD,
+                      "Proceso de admisión utilizado.", "Segunda fase del contingente general")
+        
+
     return {
         "Application mode":                am,
         "Application order":               ao,
