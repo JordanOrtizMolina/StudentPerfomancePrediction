@@ -19,12 +19,20 @@ TRADUCCION_CLASES = {
     "Graduate": "Graduarse",
 }
 
+# ─────────────────────────────────────────────────────────────
+# Variables finales del modelo (37 originales - 11 eliminadas)
+# Eliminadas por baja variabilidad: Educational special needs,
+#   Nacionality, International
+# Eliminadas por correlación nula con Target: Inflation rate,
+#   GDP, Unemployment rate, Curricular units 1st/2nd sem
+#   (credited), Curricular units 1st/2nd sem (without evaluations)
+# ─────────────────────────────────────────────────────────────
 COLUMNAS_MODELO = [
     "Marital status",
     "Application mode",
     "Application order",
     "Course",
-    "Daytime/evening attendance",
+    "Daytime/evening attendance\t",
     "Previous qualification",
     "Previous qualification (grade)",
     "Mother's qualification",
@@ -38,32 +46,28 @@ COLUMNAS_MODELO = [
     "Gender",
     "Scholarship holder",
     "Age at enrollment",
-    "Curricular units 1st sem (credited)",
     "Curricular units 1st sem (enrolled)",
     "Curricular units 1st sem (evaluations)",
     "Curricular units 1st sem (approved)",
     "Curricular units 1st sem (grade)",
-    "Curricular units 1st sem (without evaluations)",
-    "Curricular units 2nd sem (credited)",
     "Curricular units 2nd sem (enrolled)",
     "Curricular units 2nd sem (evaluations)",
     "Curricular units 2nd sem (approved)",
     "Curricular units 2nd sem (grade)",
-    "Curricular units 2nd sem (without evaluations)",
-    "Unemployment rate",
-    "Inflation rate",
-    "GDP",
 ]
 
+# Secciones del formulario — la pestaña Economía desaparece
+# porque las 3 variables macroeconómicas fueron eliminadas del modelo
 CONTEO_SECCIONES = {
     "Información personal": 4,
     "Información académica de ingreso": 7,
     "Información familiar": 4,
     "Información financiera": 3,
-    "Rendimiento del primer semestre": 6,
-    "Rendimiento del segundo semestre": 6,
-    "Indicadores económicos": 3,
+    "Rendimiento del primer semestre": 4,
+    "Rendimiento del segundo semestre": 4,
 }
+
+# ── Catálogos ────────────────────────────────────────────────
 
 ESTADO_CIVIL = {
     "Soltero/a": 1,
@@ -245,6 +249,8 @@ CONTENIDO_RESULTADOS = {
 }
 
 
+# ── Utilidades ───────────────────────────────────────────────
+
 def nombre_modelo_en_espanol(modelo: Any) -> str:
     nombres = {
         "LogisticRegression": "Regresión logística",
@@ -305,20 +311,8 @@ def aplicar_estilos() -> None:
                 padding: 1.4rem 1.5rem;
             }
 
-            .encabezado h1 {
-                color: #ffffff;
-                font-size: 2.1rem;
-                letter-spacing: 0;
-                line-height: 1.16;
-                margin: 0;
-            }
-
-            .encabezado p {
-                color: #d9e8f8;
-                font-size: 1.02rem;
-                line-height: 1.5;
-                margin: 0.45rem 0 0;
-            }
+            .encabezado h1 { color: #ffffff; font-size: 2.1rem; letter-spacing: 0; line-height: 1.16; margin: 0; }
+            .encabezado p  { color: #d9e8f8; font-size: 1.02rem; line-height: 1.5; margin: 0.45rem 0 0; }
 
             .tarjeta,
             .tarjeta-seccion,
@@ -327,70 +321,30 @@ def aplicar_estilos() -> None:
                 background: var(--superficie);
                 border: 1px solid var(--borde);
                 border-radius: 8px;
-                box-shadow: 0 10px 24px rgba(16, 40, 71, 0.07);
+                box-shadow: 0 10px 24px rgba(16,40,71,0.07);
             }
 
-            .tarjeta {
-                border-top: 4px solid var(--azul-700);
-                min-height: 142px;
-                padding: 1.05rem 1.1rem;
-            }
+            .tarjeta { border-top: 4px solid var(--azul-700); min-height: 142px; padding: 1.05rem 1.1rem; }
+            .tarjeta h3, .tarjeta-seccion h3, .tarjeta-resultado h2 { color: var(--azul-900); letter-spacing: 0; margin: 0 0 0.45rem; }
+            .tarjeta p,  .tarjeta-seccion p,  .tarjeta-resultado p  { color: var(--gris-600); line-height: 1.5; margin: 0; }
 
-            .tarjeta h3,
-            .tarjeta-seccion h3,
-            .tarjeta-resultado h2 {
-                color: var(--azul-900);
-                letter-spacing: 0;
-                margin: 0 0 0.45rem;
-            }
-
-            .tarjeta p,
-            .tarjeta-seccion p,
-            .tarjeta-resultado p {
-                color: var(--gris-600);
-                line-height: 1.5;
-                margin: 0;
-            }
-
-            .tarjeta-seccion {
-                background: #fbfdff;
-                margin: 0.5rem 0 1rem;
-                padding: 1rem 1.1rem;
-            }
+            .tarjeta-seccion { background: #fbfdff; margin: 0.5rem 0 1rem; padding: 1rem 1.1rem; }
 
             div[data-testid="stMetric"] {
                 background: #ffffff;
                 border: 1px solid var(--borde);
                 border-radius: 8px;
-                box-shadow: 0 8px 18px rgba(16, 40, 71, 0.06);
+                box-shadow: 0 8px 18px rgba(16,40,71,0.06);
                 padding: 0.75rem 0.9rem;
             }
+            div[data-testid="stMetric"] label                          { color: var(--gris-600); font-weight: 650; }
+            div[data-testid="stMetric"] [data-testid="stMetricValue"]  { color: var(--azul-900); font-weight: 800; }
 
-            div[data-testid="stMetric"] label {
-                color: var(--gris-600);
-                font-weight: 650;
-            }
+            div[data-testid="stTabs"] button     { color: var(--azul-900); font-weight: 750; }
+            div[data-baseweb="tab-highlight"]    { background-color: var(--azul-700); }
 
-            div[data-testid="stMetric"] [data-testid="stMetricValue"] {
-                color: var(--azul-900);
-                font-weight: 800;
-            }
+            label, .stNumberInput label, .stSelectbox label { color: var(--gris-900) !important; font-weight: 650; }
 
-            div[data-testid="stTabs"] button {
-                color: var(--azul-900);
-                font-weight: 750;
-            }
-
-            div[data-baseweb="tab-highlight"] {
-                background-color: var(--azul-700);
-            }
-
-            label, .stNumberInput label, .stSelectbox label {
-                color: var(--gris-900) !important;
-                font-weight: 650;
-            }
-
-            /* Ensure Streamlit buttons show white text across contexts */
             .stApp .stButton > button,
             .stApp .stButton button,
             .stButton > button {
@@ -402,254 +356,56 @@ def aplicar_estilos() -> None:
                 min-height: 2.8rem;
                 width: 100%;
             }
-
             .stApp .stButton > button:hover,
-            .stButton > button:hover {
-                background: var(--azul-800);
-                border-color: var(--azul-800);
-                color: #ffffff !important;
-            }
+            .stButton > button:hover { background: var(--azul-800); border-color: var(--azul-800); color: #ffffff !important; }
 
-            .tarjeta-resultado {
-                border-left: 7px solid var(--azul-700);
-                margin-top: 0.75rem;
-                padding: 1.2rem 1.25rem;
-            }
-
-            .etiqueta-resultado {
-                color: var(--gris-600);
-                font-weight: 750;
-                margin-bottom: 0.25rem;
-            }
-
+            .tarjeta-resultado { border-left: 7px solid var(--azul-700); margin-top: 0.75rem; padding: 1.2rem 1.25rem; }
+            .etiqueta-resultado { color: var(--gris-600); font-weight: 750; margin-bottom: 0.25rem; }
             .nivel-riesgo {
-                background: var(--azul-100);
-                border: 1px solid var(--borde);
-                border-radius: 6px;
-                color: var(--azul-900);
-                display: inline-block;
-                font-weight: 800;
-                margin: 0.55rem 0 0.65rem;
-                padding: 0.28rem 0.62rem;
+                background: var(--azul-100); border: 1px solid var(--borde); border-radius: 6px;
+                color: var(--azul-900); display: inline-block; font-weight: 800;
+                margin: 0.55rem 0 0.65rem; padding: 0.28rem 0.62rem;
             }
 
-            .fila-probabilidad {
-                margin-bottom: 0.55rem;
-                padding: 0.65rem 0.8rem;
-            }
-
-            .nombre-probabilidad {
-                color: var(--azul-900);
-                font-weight: 800;
-                margin-bottom: 0.2rem;
-            }
-
-            .valor-probabilidad {
-                color: var(--gris-600);
-                font-weight: 750;
-            }
+            .fila-probabilidad { margin-bottom: 0.55rem; padding: 0.65rem 0.8rem; }
+            .nombre-probabilidad { color: var(--azul-900); font-weight: 800; margin-bottom: 0.2rem; }
+            .valor-probabilidad  { color: var(--gris-600); font-weight: 750; }
 
             .barra-aplicacion {
-                align-items: center;
-                background: #ffffff;
-                border: 1px solid var(--borde);
-                border-radius: 8px;
-                box-shadow: 0 8px 20px rgba(16, 40, 71, 0.06);
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 1rem;
-                padding: 0.8rem 1rem;
+                align-items: center; background: #ffffff; border: 1px solid var(--borde);
+                border-radius: 8px; box-shadow: 0 8px 20px rgba(16,40,71,0.06);
+                display: flex; justify-content: space-between; margin-bottom: 1rem; padding: 0.8rem 1rem;
             }
-
-            .marca-aplicacion {
-                align-items: center;
-                display: flex;
-                gap: 0.75rem;
-            }
-
+            .marca-aplicacion { align-items: center; display: flex; gap: 0.75rem; }
             .marca-simbolo {
-                align-items: center;
-                background: var(--azul-900);
-                border-radius: 8px;
-                color: #ffffff;
-                display: flex;
-                font-weight: 900;
-                height: 42px;
-                justify-content: center;
-                width: 42px;
+                align-items: center; background: var(--azul-900); border-radius: 8px;
+                color: #ffffff; display: flex; font-weight: 900; height: 42px; justify-content: center; width: 42px;
             }
+            .marca-texto    { color: var(--azul-900); font-size: 1rem; font-weight: 850; line-height: 1.15; }
+            .marca-subtexto { color: var(--gris-600); font-size: 0.82rem; font-weight: 650; margin-top: 0.12rem; }
 
-            .marca-texto {
-                color: var(--azul-900);
-                font-size: 1rem;
-                font-weight: 850;
-                line-height: 1.15;
-            }
+            .bloque-inicio { background: #ffffff; border: 1px solid var(--borde); border-radius: 8px; box-shadow: 0 10px 24px rgba(16,40,71,0.07); min-height: 170px; padding: 1.15rem; }
+            .bloque-inicio h3 { color: var(--azul-900); margin: 0 0 0.45rem; }
+            .bloque-inicio p  { color: var(--gris-600); line-height: 1.5; margin: 0; }
 
-            .marca-subtexto {
-                color: var(--gris-600);
-                font-size: 0.82rem;
-                font-weight: 650;
-                margin-top: 0.12rem;
-            }
+            .pantalla-inicio-cta { margin-top: 1rem; text-align: center; }
+            .pantalla-inicio-cta .stButton > button { max-width: 360px; }
 
-            .chip-header {
-                background: var(--azul-050);
-                border: 1px solid var(--borde);
-                border-radius: 6px;
-                color: var(--azul-900);
-                display: inline-block;
-                font-size: 0.82rem;
-                font-weight: 800;
-                margin-left: 0.35rem;
-                padding: 0.35rem 0.55rem;
-            }
-
-            .pantalla-inicio {
-                background: var(--azul-900);
-                border: 1px solid var(--azul-800);
-                border-radius: 8px;
-                color: #ffffff;
-                padding: 2rem;
-            }
-
-            .pantalla-inicio h1 {
-                color: #ffffff;
-                font-size: 2.35rem;
-                letter-spacing: 0;
-                line-height: 1.12;
-                margin: 0;
-            }
-
-            .pantalla-inicio p {
-                color: #d9e8f8;
-                font-size: 1.02rem;
-                line-height: 1.58;
-                margin: 0.75rem 0 0;
-                max-width: 860px;
-            }
-
-            .pantalla-inicio-cta {
-                margin-top: 1rem;
-                text-align: center;
-            }
-
-            .pantalla-inicio-cta .stButton > button {
-                max-width: 360px;
-            }
-
-            .bloque-inicio {
-                background: #ffffff;
-                border: 1px solid var(--borde);
-                border-radius: 8px;
-                box-shadow: 0 10px 24px rgba(16, 40, 71, 0.07);
-                min-height: 170px;
-                padding: 1.15rem;
-            }
-
-            .bloque-inicio h3 {
-                color: var(--azul-900);
-                margin: 0 0 0.45rem;
-            }
-
-            .bloque-inicio p {
-                color: var(--gris-600);
-                line-height: 1.5;
-                margin: 0;
-            }
-
-            /* Footer: light variant (white background) with contrasted chips */
             .pie-aplicacion {
-                background: var(--superficie);
-                border: 1px solid var(--borde);
-                border-radius: 8px;
-                color: var(--gris-900);
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.45rem;
-                align-items: center;
-                margin-top: 1.4rem;
-                padding: 0.9rem 1rem;
-                box-shadow: 0 6px 18px rgba(16, 40, 71, 0.04);
+                background: var(--superficie); border: 1px solid var(--borde); border-radius: 8px;
+                color: var(--gris-900); display: flex; flex-wrap: wrap; gap: 0.45rem;
+                align-items: center; margin-top: 1.4rem; padding: 0.9rem 1rem;
+                box-shadow: 0 6px 18px rgba(16,40,71,0.04);
             }
-
-            .pie-aplicacion-contenido {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: space-between;
-                align-items: center;
-                gap: 0.75rem;
-                width: 100%;
-            }
-
-            .pie-aplicacion-chip {
-                background: var(--azul-050);
-                border: 1px solid var(--borde);
-                border-radius: 999px;
-                color: var(--azul-900);
-                display: inline-flex;
-                font-size: 0.8rem;
-                font-weight: 750;
-                line-height: 1;
-                padding: 0.32rem 0.65rem;
-                white-space: nowrap;
-            }
-
-            .pie-aplicacion-titulo {
-                color: var(--gris-900);
-                font-size: 0.98rem;
-                font-weight: 850;
-                letter-spacing: 0.2px;
-            }
-
-            .pie-aplicacion-autor-chip {
-                background: var(--azul-050);
-                border-color: var(--borde);
-                box-shadow: none;
-                color: var(--azul-900);
-            }
-
-            .pie-aplicacion-autores {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: flex-end;
-                gap: 0.35rem;
-                margin-left: auto;
-            }
-
-            .pie-aplicacion-texto-footer {
-                color: var(--gris-700);
-                font-size: 0.82rem;
-                font-weight: 650;
-                letter-spacing: 0.1px;
-                padding: 0.1rem 0;
-            }
-
-            .pie-aplicacion strong {
-                color: var(--azul-900);
-            }
-
-            .pie-aplicacion span {
-                color: var(--gris-700);
-                font-size: 0.88rem;
-                font-weight: 650;
-            }
+            .pie-aplicacion-contenido { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem; width: 100%; }
+            .pie-aplicacion-chip { background: var(--azul-050); border: 1px solid var(--borde); border-radius: 999px; color: var(--azul-900); display: inline-flex; font-size: 0.8rem; font-weight: 750; line-height: 1; padding: 0.32rem 0.65rem; white-space: nowrap; }
+            .pie-aplicacion-titulo { color: var(--gris-900); font-size: 0.98rem; font-weight: 850; letter-spacing: 0.2px; }
+            .pie-aplicacion-autores { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.35rem; margin-left: auto; }
+            .pie-aplicacion-texto-footer { color: var(--gris-700); font-size: 0.82rem; font-weight: 650; letter-spacing: 0.1px; padding: 0.1rem 0; }
 
             @media (max-width: 760px) {
-                .barra-aplicacion,
-                .pie-aplicacion {
-                    align-items: flex-start;
-                    flex-direction: column;
-                    gap: 0.75rem;
-                }
-
-                .pie-aplicacion-contenido {
-                    width: 100%;
-                }
-
-                .chip-header {
-                    margin: 0 0.25rem 0.25rem 0;
-                }
+                .barra-aplicacion, .pie-aplicacion { align-items: flex-start; flex-direction: column; gap: 0.75rem; }
+                .pie-aplicacion-contenido { width: 100%; }
             }
         </style>
         """,
@@ -657,10 +413,14 @@ def aplicar_estilos() -> None:
     )
 
 
+# ── Carga del modelo ─────────────────────────────────────────
+
 @st.cache_resource(show_spinner=False)
 def load_model() -> tuple[Any, Any]:
     return load_model_artifacts(RUTA_MODELO, RUTA_PREPROCESADOR)
 
+
+# ── Helpers de formulario ────────────────────────────────────
 
 def selector_categoria(etiqueta: str, opciones: dict[str, int], ayuda: str, valor_inicial: str | None = None) -> int:
     etiquetas = list(opciones.keys())
@@ -670,350 +430,213 @@ def selector_categoria(etiqueta: str, opciones: dict[str, int], ayuda: str, valo
 
 
 def entrada_entera(etiqueta: str, valor: int, minimo: int, maximo: int, ayuda: str) -> int:
-    return int(
-        st.number_input(
-            etiqueta,
-            min_value=minimo,
-            max_value=maximo,
-            value=valor,
-            step=1,
-            help=ayuda,
-        )
-    )
+    return int(st.number_input(etiqueta, min_value=minimo, max_value=maximo, value=valor, step=1, help=ayuda))
 
 
-def entrada_decimal(
-    etiqueta: str,
-    valor: float,
-    minimo: float,
-    maximo: float,
-    ayuda: str,
-    paso: float = 0.1,
-) -> float:
-    return float(
-        st.number_input(
-            etiqueta,
-            min_value=minimo,
-            max_value=maximo,
-            value=valor,
-            step=paso,
-            help=ayuda,
-        )
-    )
+def entrada_decimal(etiqueta: str, valor: float, minimo: float, maximo: float, ayuda: str, paso: float = 0.1) -> float:
+    return float(st.number_input(etiqueta, min_value=minimo, max_value=maximo, value=valor, step=paso, help=ayuda))
 
 
-def encabezado_seccion(titulo: str, descripcion: str, cantidad: int) -> None:
-    return None
-
+# ── Formulario ───────────────────────────────────────────────
 
 def create_input_form() -> tuple[dict[str, Any], bool]:
+    """
+    Formulario con las 26 variables del modelo entrenado.
+
+    Variables eliminadas respecto al dataset original (no aparecen aquí):
+      · Educational special needs  — valor dominante 98.8 %, varianza casi cero
+      · Nacionality                — valor dominante 97.5 %, varianza casi cero
+      · International              — valor dominante 97.5 %, varianza casi cero
+      · Unemployment rate          — correlación con Target < 0.05
+      · Inflation rate             — correlación con Target < 0.05
+      · GDP                        — correlación con Target < 0.05
+      · Curricular units 1st/2nd sem (credited)          — correlación < 0.05, ~88 % en cero
+      · Curricular units 1st/2nd sem (without evaluations) — correlación < 0.05, ~93 % en cero
+    """
     valores: dict[str, Any] = {}
     generar_prediccion = False
-    pestanas = st.tabs(
-        [
-            "Personal",
-            "Ingreso",
-            "Familiar",
-            "Financiera",
-            "Primer semestre",
-            "Segundo semestre",
-            "Economía",
-        ]
-    )
 
+    pestanas = st.tabs([
+        "Personal",
+        "Ingreso",
+        "Familiar",
+        "Financiera",
+        "Primer semestre",
+        "Segundo semestre",
+    ])
+
+    # ── Pestaña 0: Personal ──────────────────────────────────
     with pestanas[0]:
-        encabezado_seccion(
-            "Información personal",
-            "Datos demográficos y condiciones generales del estudiante.",
-            CONTEO_SECCIONES["Información personal"],
-        )
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             valores["Marital status"] = selector_categoria(
-                "Estado civil",
-                ESTADO_CIVIL,
-                "Situación civil actual del estudiante.",
-                "Soltero/a",
+                "Estado civil", ESTADO_CIVIL,
+                "Situación civil actual del estudiante.", "Soltero/a",
             )
         with col2:
             valores["Gender"] = selector_categoria(
-                "Género",
-                GENERO,
-                "Género registrado del estudiante.",
-                "Femenino",
+                "Género", GENERO,
+                "Género registrado del estudiante.", "Femenino",
             )
         with col3:
             valores["Age at enrollment"] = entrada_entera(
-                "Edad al momento de la matrícula",
-                20,
-                15,
-                80,
+                "Edad al momento de la matrícula", 20, 15, 80,
                 "Edad del estudiante cuando ingresó a la universidad.",
             )
         with col4:
             valores["Displaced"] = selector_categoria(
-                "Desplazado o foráneo",
-                SI_NO,
-                "Indica si el estudiante vive fuera de su municipio de origen para estudiar.",
-                "No",
+                "Desplazado o foráneo", SI_NO,
+                "Indica si el estudiante vive fuera de su municipio de origen para estudiar.", "No",
             )
 
+    # ── Pestaña 1: Ingreso ───────────────────────────────────
     with pestanas[1]:
-        encabezado_seccion(
-            "Información académica de ingreso",
-            "Variables relacionadas con el proceso de admisión y los antecedentes académicos.",
-            CONTEO_SECCIONES["Información académica de ingreso"],
-        )
         with st.expander("Solicitud, carrera y admisión", expanded=True):
             col1, col2, col3 = st.columns(3)
             with col1:
                 valores["Application mode"] = selector_categoria(
-                    "Modalidad de solicitud de ingreso",
-                    MODALIDAD_SOLICITUD,
+                    "Modalidad de solicitud de ingreso", MODALIDAD_SOLICITUD,
                     "Tipo de proceso mediante el cual el estudiante ingresó a la institución.",
                     "Segunda fase del contingente general",
                 )
                 valores["Application order"] = entrada_entera(
-                    "Orden de preferencia de la solicitud",
-                    1,
-                    0,
-                    9,
+                    "Orden de preferencia de la solicitud", 1, 0, 9,
                     "Posición en la que el estudiante eligió esta carrera al aplicar.",
                 )
                 valores["Course"] = selector_categoria(
-                    "Carrera",
-                    CARRERAS,
-                    "Carrera o programa académico seleccionado por el estudiante.",
-                    "Turismo",
+                    "Carrera", CARRERAS,
+                    "Carrera o programa académico seleccionado por el estudiante.", "Turismo",
                 )
             with col2:
-                valores["Daytime/evening attendance"] = selector_categoria(
-                    "Turno de asistencia",
-                    TURNO,
-                    "Horario principal de asistencia del estudiante.",
-                    "Diurno",
+                valores["Daytime/evening attendance\t"] = selector_categoria(
+                    "Turno de asistencia", TURNO,
+                    "Horario principal de asistencia del estudiante.", "Diurno",
                 )
                 valores["Previous qualification"] = selector_categoria(
-                    "Nivel de calificación previa",
-                    CALIFICACION_PREVIA,
+                    "Nivel de calificación previa", CALIFICACION_PREVIA,
                     "Nivel educativo alcanzado antes del ingreso a la universidad.",
                     "Educación secundaria",
                 )
             with col3:
                 valores["Previous qualification (grade)"] = entrada_decimal(
-                    "Nota de calificación previa",
-                    130.0,
-                    0.0,
-                    200.0,
+                    "Nota de calificación previa", 130.0, 0.0, 200.0,
                     "Calificación obtenida en la formación previa.",
                 )
                 valores["Admission grade"] = entrada_decimal(
-                    "Nota de admisión",
-                    130.0,
-                    0.0,
-                    200.0,
+                    "Nota de admisión", 130.0, 0.0, 200.0,
                     "Calificación obtenida en el proceso de admisión.",
                 )
 
+    # ── Pestaña 2: Familiar ──────────────────────────────────
     with pestanas[2]:
-        encabezado_seccion(
-            "Información familiar",
-            "Nivel educativo y ocupación de los padres como contexto socioacadémico.",
-            CONTEO_SECCIONES["Información familiar"],
-        )
         col1, col2 = st.columns(2)
         with col1:
             valores["Mother's qualification"] = selector_categoria(
-                "Nivel educativo de la madre",
-                NIVELES_EDUCATIVOS,
+                "Nivel educativo de la madre", NIVELES_EDUCATIVOS,
                 "Categoría educativa registrada para la madre.",
                 "Educación básica, tercer ciclo",
             )
             valores["Mother's occupation"] = selector_categoria(
-                "Ocupación de la madre",
-                OCUPACIONES,
+                "Ocupación de la madre", OCUPACIONES,
                 "Actividad laboral registrada para la madre.",
                 "Trabajador de servicios personales, seguridad o ventas",
             )
         with col2:
             valores["Father's qualification"] = selector_categoria(
-                "Nivel educativo del padre",
-                NIVELES_EDUCATIVOS,
-                "Categoría educativa registrada para el padre.",
-                "Otro, 11.º año",
+                "Nivel educativo del padre", NIVELES_EDUCATIVOS,
+                "Categoría educativa registrada para el padre.", "Otro, 11.º año",
             )
             valores["Father's occupation"] = selector_categoria(
-                "Ocupación del padre",
-                OCUPACIONES,
-                "Actividad laboral registrada para el padre.",
-                "Trabajador no calificado",
+                "Ocupación del padre", OCUPACIONES,
+                "Actividad laboral registrada para el padre.", "Trabajador no calificado",
             )
 
+    # ── Pestaña 3: Financiera ────────────────────────────────
     with pestanas[3]:
-        encabezado_seccion(
-            "Información financiera",
-            "Indicadores individuales asociados con pagos, deuda y apoyo financiero.",
-            CONTEO_SECCIONES["Información financiera"],
-        )
         col1, col2, col3 = st.columns(3)
         with col1:
             valores["Debtor"] = selector_categoria(
-                "Deudor",
-                SI_NO,
-                "Indica si existen deudas pendientes con la institución.",
-                "No",
+                "Deudor", SI_NO,
+                "Indica si existen deudas pendientes con la institución.", "No",
             )
         with col2:
             valores["Tuition fees up to date"] = selector_categoria(
-                "Matrícula al día",
-                SI_NO,
-                "Indica si el estudiante está al día con sus pagos.",
-                "Sí",
+                "Matrícula al día", SI_NO,
+                "Indica si el estudiante está al día con sus pagos.", "Sí",
             )
         with col3:
             valores["Scholarship holder"] = selector_categoria(
-                "Becado",
-                SI_NO,
-                "Indica si recibe una beca académica.",
-                "No",
+                "Becado", SI_NO,
+                "Indica si recibe una beca académica.", "No",
             )
 
+    # ── Pestaña 4: Primer semestre ───────────────────────────
+    # Se excluyen (credited) y (without evaluations): correlación < 0.05 con Target
     with pestanas[4]:
-        encabezado_seccion(
-            "Rendimiento del primer semestre",
-            "Resultados académicos del primer semestre registrados en el modelo.",
-            CONTEO_SECCIONES["Rendimiento del primer semestre"],
+        st.markdown(
+            """
+            <div class="tarjeta-seccion">
+                <p>Las unidades <strong>acreditadas</strong> y <strong>sin evaluación</strong>
+                fueron eliminadas del modelo por tener correlación casi nula con la situación
+                final del estudiante y más del 87–93 % de sus valores en cero.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
-            valores["Curricular units 1st sem (credited)"] = entrada_entera(
-                "Unidades curriculares acreditadas",
-                0,
-                0,
-                40,
-                "Cantidad de unidades curriculares reconocidas o acreditadas en el primer semestre.",
-            )
             valores["Curricular units 1st sem (enrolled)"] = entrada_entera(
-                "Unidades curriculares matriculadas",
-                6,
-                0,
-                40,
-                "Cantidad de unidades curriculares inscritas durante el primer semestre.",
+                "Unidades matriculadas", 6, 0, 40,
+                "Unidades curriculares inscritas durante el primer semestre.",
             )
         with col2:
             valores["Curricular units 1st sem (evaluations)"] = entrada_entera(
-                "Evaluaciones realizadas",
-                6,
-                0,
-                80,
+                "Evaluaciones realizadas", 6, 0, 80,
                 "Número de evaluaciones realizadas durante el primer semestre.",
             )
-            valores["Curricular units 1st sem (approved)"] = entrada_entera(
-                "Unidades curriculares aprobadas",
-                5,
-                0,
-                40,
-                "Cantidad de unidades curriculares aprobadas en el primer semestre.",
-            )
         with col3:
+            valores["Curricular units 1st sem (approved)"] = entrada_entera(
+                "Unidades aprobadas", 5, 0, 40,
+                "Unidades curriculares aprobadas en el primer semestre.",
+            )
+        with col4:
             valores["Curricular units 1st sem (grade)"] = entrada_decimal(
-                "Nota promedio del primer semestre",
-                12.0,
-                0.0,
-                20.0,
+                "Nota promedio", 12.0, 0.0, 20.0,
                 "Promedio académico obtenido durante el primer semestre.",
             )
-            valores["Curricular units 1st sem (without evaluations)"] = entrada_entera(
-                "Unidades curriculares sin evaluación",
-                0,
-                0,
-                40,
-                "Cantidad de unidades curriculares sin evaluación en el primer semestre.",
-            )
 
+    # ── Pestaña 5: Segundo semestre ──────────────────────────
     with pestanas[5]:
-        encabezado_seccion(
-            "Rendimiento del segundo semestre",
-            "Resultados académicos del segundo semestre registrados en el modelo.",
-            CONTEO_SECCIONES["Rendimiento del segundo semestre"],
+        st.markdown(
+            """
+            <div class="tarjeta-seccion">
+                <p>Las unidades <strong>acreditadas</strong> y <strong>sin evaluación</strong>
+                fueron eliminadas del modelo por tener correlación casi nula con la situación
+                final del estudiante y más del 87–93 % de sus valores en cero.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
-            valores["Curricular units 2nd sem (credited)"] = entrada_entera(
-                "Unidades curriculares acreditadas",
-                0,
-                0,
-                40,
-                "Cantidad de unidades curriculares reconocidas o acreditadas en el segundo semestre.",
-            )
             valores["Curricular units 2nd sem (enrolled)"] = entrada_entera(
-                "Unidades curriculares matriculadas",
-                6,
-                0,
-                40,
-                "Cantidad de unidades curriculares inscritas durante el segundo semestre.",
+                "Unidades matriculadas", 6, 0, 40,
+                "Unidades curriculares inscritas durante el segundo semestre.",
             )
         with col2:
             valores["Curricular units 2nd sem (evaluations)"] = entrada_entera(
-                "Evaluaciones realizadas",
-                6,
-                0,
-                80,
+                "Evaluaciones realizadas", 6, 0, 80,
                 "Número de evaluaciones realizadas durante el segundo semestre.",
             )
+        with col3:
             valores["Curricular units 2nd sem (approved)"] = entrada_entera(
-                "Unidades curriculares aprobadas",
-                5,
-                0,
-                40,
-                "Cantidad de unidades curriculares aprobadas en el segundo semestre.",
+                "Unidades aprobadas", 5, 0, 40,
+                "Unidades curriculares aprobadas en el segundo semestre.",
             )
-        with col3:
+        with col4:
             valores["Curricular units 2nd sem (grade)"] = entrada_decimal(
-                "Nota promedio del segundo semestre",
-                12.0,
-                0.0,
-                20.0,
+                "Nota promedio", 12.0, 0.0, 20.0,
                 "Promedio académico obtenido durante el segundo semestre.",
-            )
-            valores["Curricular units 2nd sem (without evaluations)"] = entrada_entera(
-                "Unidades curriculares sin evaluación",
-                0,
-                0,
-                40,
-                "Cantidad de unidades curriculares sin evaluación en el segundo semestre.",
-            )
-
-    with pestanas[6]:
-        encabezado_seccion(
-            "Indicadores económicos",
-            "Contexto macroeconómico del período de matrícula.",
-            CONTEO_SECCIONES["Indicadores económicos"],
-        )
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            valores["Unemployment rate"] = entrada_decimal(
-                "Tasa de desempleo",
-                11.0,
-                0.0,
-                30.0,
-                "Tasa de desempleo del país durante el período de matrícula.",
-            )
-        with col2:
-            valores["Inflation rate"] = entrada_decimal(
-                "Tasa de inflación",
-                1.4,
-                -10.0,
-                30.0,
-                "Tasa de inflación del país durante el período de matrícula.",
-            )
-        with col3:
-            valores["GDP"] = entrada_decimal(
-                "Producto Interno Bruto (PIB)",
-                1.0,
-                -20.0,
-                20.0,
-                "Indicador económico del crecimiento del país.",
             )
 
         st.write("")
@@ -1023,56 +646,7 @@ def create_input_form() -> tuple[dict[str, Any], bool]:
     return valores, generar_prediccion
 
 
-def mostrar_introduccion(modelo: Any) -> None:
-    st.markdown(
-        f"""
-        <div class="encabezado">
-            <h1>{TITULO_APP}</h1>
-            <p>{SUBTITULO_APP}</p>
-            <p>
-                Plataforma universitaria para estimar si un estudiante podría desertar,
-                mantenerse matriculado o graduarse, usando las 33 variables reales del modelo.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(
-            """
-            <div class="tarjeta">
-                <h3>Objetivo del proyecto</h3>
-                <p>Apoyar la toma de decisiones académicas mediante predicciones
-                basadas en información personal, familiar, financiera y curricular.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col2:
-        st.markdown(
-            f"""
-            <div class="tarjeta">
-                <h3>Modelo utilizado</h3>
-                <p>{nombre_modelo_en_espanol(modelo)} con el mismo preprocesamiento utilizado
-                durante el entrenamiento del proyecto.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col3:
-        st.markdown(
-            """
-            <div class="tarjeta">
-                <h3>Cobertura del formulario</h3>
-                <p>El formulario solicita exactamente las 33 variables entrenadas,
-                organizadas en siete secciones para facilitar su uso.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
+# ── Pantallas ────────────────────────────────────────────────
 
 def mostrar_header_aplicacion() -> None:
     st.markdown(
@@ -1081,11 +655,9 @@ def mostrar_header_aplicacion() -> None:
             <div class="marca-aplicacion">
                 <div class="marca-simbolo">SP</div>
                 <div>
-                    <h1>Predicción de Rendimiento Académico</h1>
+                    <div class="marca-texto">Predicción de Rendimiento Académico</div>
+                    <div class="marca-subtexto">Inteligencia Artificial, 2026</div>
                 </div>
-            </div>
-            <div>
-                <span class="marca-subtexto"> Inteligencia Artificial, 2026</span>
             </div>
         </div>
         """,
@@ -1098,11 +670,11 @@ def mostrar_footer_aplicacion() -> None:
         """
         <div class="pie-aplicacion">
             <div class="pie-aplicacion-contenido">
-                <span class="pie-aplicacion-texto-footer">Student Performance Prediction - Proyecto Inteligencia Artificial</span>
+                <span class="pie-aplicacion-texto-footer">Student Performance Prediction — Proyecto Inteligencia Artificial</span>
                 <div class="pie-aplicacion-autores">
-                    <span class="pie-aplicacion-chip pie-aplicacion-autor-chip">Jordan Ortiz Molina</span>
-                    <span class="pie-aplicacion-chip pie-aplicacion-autor-chip">Yenifer Mata Flores</span>
-                    <span class="pie-aplicacion-chip pie-aplicacion-autor-chip">Deyaneira Altamirano Cordero</span>
+                    <span class="pie-aplicacion-chip">Jordan Ortiz Molina</span>
+                    <span class="pie-aplicacion-chip">Yenifer Mata Flores</span>
+                    <span class="pie-aplicacion-chip">Deyaneira Altamirano Cordero</span>
                 </div>
             </div>
         </div>
@@ -1114,9 +686,13 @@ def mostrar_footer_aplicacion() -> None:
 def mostrar_pantalla_inicio(modelo: Any, preprocesador: Any) -> None:
     mostrar_header_aplicacion()
     st.markdown(
-        f"""
+        """
         <div class="tarjeta-seccion" style="margin-bottom:0.8rem; padding:0.8rem 1rem;">
-            <p style="margin:0; color:var(--gris-600);">Este sistema permite estimar el estado académico probable de un estudiante: desertar, seguir matriculado o graduarse.</p>
+            <p style="margin:0; color:var(--gris-600);">
+                Este sistema estima el estado académico probable de un estudiante:
+                desertar, seguir matriculado o graduarse, usando las 26 variables
+                seleccionadas durante el preprocesamiento del modelo.
+            </p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1129,7 +705,7 @@ def mostrar_pantalla_inicio(modelo: Any, preprocesador: Any) -> None:
             """
             <div class="bloque-inicio">
                 <h3>Qué hace el sistema</h3>
-                <p>Recibe información personal, académica, familiar, financiera y económica
+                <p>Recibe información personal, académica, familiar y financiera
                 del estudiante para generar una predicción de desempeño académico.</p>
             </div>
             """,
@@ -1139,8 +715,10 @@ def mostrar_pantalla_inicio(modelo: Any, preprocesador: Any) -> None:
         st.markdown(
             """
             <div class="bloque-inicio">
-                <h3>Para qué sirve</h3>
-                <p>Su propósito es apoyar el análisis institucional y facilitar la identificación temprana de perfiles que podrían requerir acompañamiento académico</p>
+                <h3>Variables utilizadas</h3>
+                <p>Se usan 26 de las 37 variables originales del dataset UCI.
+                Las 11 restantes fueron eliminadas por baja variabilidad o
+                correlación nula con la situación final del estudiante.</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1149,9 +727,10 @@ def mostrar_pantalla_inicio(modelo: Any, preprocesador: Any) -> None:
         st.markdown(
             f"""
             <div class="bloque-inicio">
-                <h3>Cómo se entrenó</h3>
-                <p>El modelo utiliza el dataset UCI de deserción y éxito académico, con
-                {len(getattr(preprocesador, "feature_names_in_", COLUMNAS_MODELO))} variables y un modelo de {nombre_modelo_en_espanol(modelo).lower()}.</p>
+                <h3>Modelo seleccionado</h3>
+                <p>{nombre_modelo_en_espanol(modelo).capitalize()}, elegido por ser el único
+                sin overfitting significativo (diferencia train-val de 0.04) y por tener
+                el mejor F1 macro en datos no vistos (0.7274).</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1184,47 +763,49 @@ def display_results(prediccion: str, probabilidades: dict[str, float], confianza
     )
 
     st.write("")
-    columnas = st.columns(2)
-    columnas[0].metric("Clase predicha", prediccion_es)
-    columnas[1].metric("Nivel de confianza", f"{confianza * 100:.2f}%")
+    col1, col2 = st.columns(2)
+    col1.metric("Clase predicha", prediccion_es)
+    col2.metric("Nivel de confianza", f"{confianza * 100:.2f}%")
 
     st.write("")
     st.subheader("Probabilidades por clase")
     for clase in CLASES_MODELO:
-        probabilidad = probabilidades.get(clase, 0.0)
+        prob = probabilidades.get(clase, 0.0)
         st.markdown(
             f"""
             <div class="fila-probabilidad">
                 <div class="nombre-probabilidad">{TRADUCCION_CLASES[clase]}</div>
-                <div class="valor-probabilidad">{probabilidad * 100:.2f}%</div>
+                <div class="valor-probabilidad">{prob * 100:.2f}%</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-        st.progress(min(max(probabilidad, 0.0), 1.0))
+        st.progress(min(max(prob, 0.0), 1.0))
 
 
-def mostrar_panel_analisis(modelo: Any, preprocesador: Any) -> None:
-    st.subheader("Panel de análisis")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Modelo utilizado", nombre_modelo_en_espanol(modelo))
-    col2.metric("Variables utilizadas", str(len(getattr(preprocesador, "feature_names_in_", COLUMNAS_MODELO))))
-    col3.metric("Tipo de problema", "Clasificación multiclase")
-
+# ── Validación del esquema ───────────────────────────────────
 
 def validar_esquema(preprocesador: Any) -> None:
+    """
+    Verifica que el preprocesador cargado espere exactamente las 26
+    variables del modelo entrenado, no las 33 originales de la app anterior.
+    """
     columnas_esperadas = list(getattr(preprocesador, "feature_names_in_", COLUMNAS_MODELO))
-    if len(columnas_esperadas) != 33:
-        raise ValueError(f"El preprocesador cargado espera {len(columnas_esperadas)} variables, no 33.")
-
-    faltantes = [columna for columna in columnas_esperadas if columna not in COLUMNAS_MODELO]
-    sobrantes = [columna for columna in COLUMNAS_MODELO if columna not in columnas_esperadas]
+    if len(columnas_esperadas) != len(COLUMNAS_MODELO):
+        raise ValueError(
+            f"El preprocesador espera {len(columnas_esperadas)} variables; "
+            f"la aplicación provee {len(COLUMNAS_MODELO)}."
+        )
+    faltantes = [c for c in columnas_esperadas if c not in COLUMNAS_MODELO]
+    sobrantes  = [c for c in COLUMNAS_MODELO  if c not in columnas_esperadas]
     if faltantes or sobrantes:
         raise ValueError(
             "El esquema de la aplicación no coincide con el preprocesador entrenado. "
             f"Faltantes: {faltantes}. Sobrantes: {sobrantes}."
         )
 
+
+# ── Main ─────────────────────────────────────────────────────
 
 def main() -> None:
     st.set_page_config(
@@ -1248,14 +829,13 @@ def main() -> None:
     if st.session_state["pantalla"] == "inicio":
         mostrar_pantalla_inicio(modelo, preprocesador)
         return
-    # Show header and provide navigation back to start
-    mostrar_header_aplicacion()
 
-    # Instruction: user must complete the form to generate a prediction
+    mostrar_header_aplicacion()
     st.markdown(
         """
         <div class="tarjeta-seccion" style="margin-bottom:0.8rem; padding:0.8rem 1rem;">
-            <p style="margin:0; color:var(--gris-600);">Debe completar el formulario para generar la predicción.</p>
+            <p style="margin:0; color:var(--gris-600);">Complete el formulario y presione
+            <strong>Generar predicción</strong> al final de la última pestaña.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1281,9 +861,7 @@ def main() -> None:
             st.rerun()
 
     st.write("")
-
-    # Footer on form/results screen
-    # mostrar_footer_aplicacion()
+    mostrar_footer_aplicacion()
 
 
 if __name__ == "__main__":
