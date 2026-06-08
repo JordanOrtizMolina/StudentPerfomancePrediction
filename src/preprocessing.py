@@ -5,11 +5,7 @@ from typing import Sequence
 
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import (
-    OneHotEncoder,
-    OrdinalEncoder,
-    StandardScaler,
-)
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 
 TARGET_COLUMN = "Target"
@@ -62,10 +58,6 @@ CATEGORICAL_FEATURES: list[str] = [
 FEATURE_COLUMNS: tuple[str, ...] = tuple(NUMERIC_FEATURES + CATEGORICAL_FEATURES)
 
 
-# -----------------------------------------------------------------------
-# Carga y limpieza
-# -----------------------------------------------------------------------
-
 def load_dataset(csv_path: str | Path, *, separator: str = ";") -> pd.DataFrame:
     return pd.read_csv(csv_path, sep=separator)
 
@@ -114,10 +106,6 @@ def prepare_training_frame(
     )
 
 
-# -----------------------------------------------------------------------
-# Preprocesadores
-# -----------------------------------------------------------------------
-
 def _make_ohe() -> OneHotEncoder:
     try:
         return OneHotEncoder(handle_unknown="ignore", sparse_output=False)
@@ -129,7 +117,6 @@ def build_preprocessor_lr(
     numeric_features: Sequence[str] = NUMERIC_FEATURES,
     categorical_features: Sequence[str] = CATEGORICAL_FEATURES,
 ) -> ColumnTransformer:
-
     return ColumnTransformer(
         transformers=[
             ("num", StandardScaler(), list(numeric_features)),
@@ -137,30 +124,3 @@ def build_preprocessor_lr(
         ],
         remainder="drop",
     )
-
-
-def build_preprocessor_tree(
-    numeric_features: Sequence[str] = NUMERIC_FEATURES,
-    categorical_features: Sequence[str] = CATEGORICAL_FEATURES,
-) -> ColumnTransformer:
-
-    return ColumnTransformer(
-        transformers=[
-            ("num", "passthrough", list(numeric_features)),
-            ("cat",
-             OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1),
-             list(categorical_features)),
-        ],
-        remainder="drop",
-    )
-
-
-def build_preprocessor(
-    feature_columns: Sequence[str] = FEATURE_COLUMNS,
-    *,
-    numeric_features: Sequence[str] | None = None,
-    categorical_features: Sequence[str] | None = None,
-) -> ColumnTransformer:
-    num = list(numeric_features) if numeric_features is not None else NUMERIC_FEATURES
-    cat = list(categorical_features) if categorical_features is not None else CATEGORICAL_FEATURES
-    return build_preprocessor_lr(num, cat)

@@ -429,9 +429,8 @@ def aplicar_estilos() -> None:
 # ── Carga del modelo ─────────────────────────────────────────
 
 @st.cache_resource(show_spinner=False)
-def load_model() -> tuple[Any, Any, Any]:
-    # ← CORREGIDO: devuelve 3 valores (modelo, preprocesador, label_encoder)
-    return load_model_artifacts(RUTA_MODELO, RUTA_PREPROCESADOR, RUTA_LABEL_ENCODER)
+def load_model() -> tuple[Any, Any]:
+    return load_model_artifacts(RUTA_MODELO, RUTA_PREPROCESADOR)
 
 
 def validar_esquema(preprocesador: Any) -> None:
@@ -799,25 +798,24 @@ def pantalla_formulario(modelo: Any, preprocesador: Any) -> None:
     #mostrar_footer()
 
 
-def pantalla_resultado(modelo: Any, preprocesador: Any, label_encoder: Any) -> None:
-    # ← CORREGIDO: recibe label_encoder como parámetro
+def pantalla_resultado(modelo: Any, preprocesador: Any) -> None:
     mostrar_header(con_volver=True)
 
     valores = st.session_state.get("valores", {})
 
     try:
         datos = prepare_input_data(valores, feature_columns=COLUMNAS_MODELO)
-        # ← CORREGIDO: pasa label_encoder a predict_student_status
         prediccion, probabilidades, confianza = predict_student_status(
             modelo, preprocesador, datos,
             feature_columns=COLUMNAS_MODELO,
-            label_encoder=label_encoder,
         )
         mostrar_resultados(prediccion, probabilidades, confianza)
     except ValueError as exc:
         st.error(str(exc))
-    except Exception:
-        st.error("No fue posible generar la predicción. Verifique los datos ingresados.")
+        return
+    except Exception as exc:
+        st.error(f"No fue posible generar la predicción: {exc}")
+        return
 
     st.write("")
     _, col_nuevo, _ = st.columns([2, 1, 2])
@@ -829,6 +827,8 @@ def pantalla_resultado(modelo: Any, preprocesador: Any, label_encoder: Any) -> N
             st.session_state["valores"]  = {}
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
+
+    valores = st.session_state.get("valores", {})
 
     #mostrar_footer()
 
@@ -844,8 +844,7 @@ def main() -> None:
     aplicar_estilos()
 
     try:
-        # ← CORREGIDO: desempaqueta 3 valores
-        modelo, preprocesador, label_encoder = load_model()
+        modelo, preprocesador = load_model()
         validar_esquema(preprocesador)
     except Exception as exc:
         st.error("No fue posible cargar el modelo o su esquema de datos.")
@@ -862,8 +861,8 @@ def main() -> None:
     elif pantalla == "formulario":
         pantalla_formulario(modelo, preprocesador)
     elif pantalla == "resultado":
-        # ← CORREGIDO: pasa label_encoder a la pantalla de resultado
-        pantalla_resultado(modelo, preprocesador, label_encoder)
+        pantalla_resultado(modelo, preprocesador)
+        
 
 
 if __name__ == "__main__":
