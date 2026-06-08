@@ -9,69 +9,92 @@ import pandas as pd
 from src.preprocessing import FEATURE_COLUMNS
 
 
-DEFAULT_MODEL_PATH = Path("model/best_model.pkl")
+DEFAULT_MODEL_PATH        = Path("model/best_model.pkl")
 DEFAULT_PREPROCESSOR_PATH = Path("model/preprocessor.pkl")
+DEFAULT_LABEL_ENCODER_PATH = Path("model/label_encoder.pkl")
 
 
 def load_model_artifacts(
-	model_path: str | Path = DEFAULT_MODEL_PATH,
-	preprocessor_path: str | Path = DEFAULT_PREPROCESSOR_PATH,
-) -> tuple[Any, Any]:
-	"""Load the fitted estimator and preprocessor saved by the training script."""
+    model_path: str | Path = DEFAULT_MODEL_PATH,
+    preprocessor_path: str | Path = DEFAULT_PREPROCESSOR_PATH,
+    label_encoder_path: str | Path = DEFAULT_LABEL_ENCODER_PATH,
+) -> tuple[Any, Any, Any | None]:
+    model_file        = Path(model_path)
+    preprocessor_file = Path(preprocessor_path)
+    le_file           = Path(label_encoder_path)
 
-	model_file = Path(model_path)
-	preprocessor_file = Path(preprocessor_path)
+    if not model_file.exists():
+        raise FileNotFoundError(f"No se encontró el archivo del modelo: {model_file}")
+    if not preprocessor_file.exists():
+        raise FileNotFoundError(f"No se encontró el preprocesador: {preprocessor_file}")
 
-	if not model_file.exists():
-		raise FileNotFoundError(f"No se encontró el archivo del modelo: {model_file}")
-	if not preprocessor_file.exists():
-		raise FileNotFoundError(f"No se encontró el archivo de preprocesamiento: {preprocessor_file}")
+    model        = joblib.load(model_file)
+    preprocessor = joblib.load(preprocessor_file)
+    le = None
 
-	model = joblib.load(model_file)
-	preprocessor = joblib.load(preprocessor_file)
-	return model, preprocessor
+    return model, preprocessor, le
 
 
 def prepare_input_data(
-	values: dict[str, Any],
-	feature_columns: list[str] | tuple[str, ...] = FEATURE_COLUMNS,
+    values: dict[str, Any],
+    feature_columns: list[str] | tuple[str, ...] = FEATURE_COLUMNS,
 ) -> pd.DataFrame:
-	"""Create a single-row DataFrame in the exact feature order expected by the model."""
+    normalized_values = {str(k).strip(): v for k, v in values.items()}
+    clean_features    = [str(c).strip() for c in feature_columns]
 
-	normalized_values = {str(column).strip(): value for column, value in values.items()}
-	missing_columns = [column for column in feature_columns if column not in normalized_values]
-	if missing_columns:
-		raise ValueError(f"Faltan variables requeridas: {', '.join(missing_columns)}")
+    missing = [c for c in clean_features if c not in normalized_values]
+    if missing:
+        raise ValueError(f"Faltan variables requeridas: {', '.join(missing)}")
 
-	return pd.DataFrame([{column: normalized_values[column] for column in feature_columns}])
+    ordered_data = {
+        orig_col: normalized_values[str(orig_col).strip()]
+        for orig_col in feature_columns
+    }
+    return pd.DataFrame([ordered_data])
 
 
 def predict_student_status(
-	model: Any,
-	preprocessor: Any,
-	input_data: pd.DataFrame | dict[str, Any],
-	feature_columns: list[str] | tuple[str, ...] = FEATURE_COLUMNS,
+    model: Any,
+    preprocessor: Any,
+    input_data: pd.DataFrame | dict[str, Any],
+    feature_columns: list[str] | tuple[str, ...] = FEATURE_COLUMNS,
+    label_encoder: Any | None = None,
 ) -> tuple[str, dict[str, float], float]:
-	"""Transform the input data and generate the class prediction plus class probabilities."""
+    
+    if isinstance(input_data, pd.DataFrame):
+        data_frame = input_data.copy()
+    else:
+        data_frame = prepare_input_data(input_data, feature_columns=feature_columns)
 
-	if isinstance(input_data, pd.DataFrame):
-		data_frame = input_data.copy()
-	else:
-		data_frame = prepare_input_data(input_data, feature_columns=feature_columns)
+    transformed  = preprocessor.transform(data_frame)
+    raw_pred     = model.predict(transformed)[0]
 
-	transformed = preprocessor.transform(data_frame)
-	prediction = str(model.predict(transformed)[0])
+    # Decodificar si el modelo devuelve enteros (XGBoost)
+    if label_encoder is not None:
+        prediction = str(label_encoder.inverse_transform([int(raw_pred)])[0])
+    else:
+        prediction = str(raw_pred)
 
-	probabilities = {prediction: 1.0}
-	confidence = 1.0
+    # Probabilidades por clase
+    probabilities: dict[str, float] = {prediction: 1.0}
+    confidence: float = 1.0
 
-	if hasattr(model, "predict_proba"):
-		probabilities_array = model.predict_proba(transformed)[0]
-		model_classes = [str(label) for label in getattr(model, "classes_", [prediction])]
-		probabilities = {
-			label: float(probability)
-			for label, probability in zip(model_classes, probabilities_array)
-		}
-		confidence = float(probabilities.get(prediction, max(probabilities_array)))
+    if hasattr(model, "predict_proba"):
+        proba_array = model.predict_proba(transformed)[0]
 
-	return prediction, probabilities, confidence
+        if label_encoder is not None:
+            # XGBoost: las clases están en orden numérico codificado
+            class_labels = [
+                str(label_encoder.inverse_transform([i])[0])
+                for i in range(len(proba_array))
+            ]
+        else:
+            class_labels = [str(c) for c in getattr(model, "classes_", [prediction])]
+
+        probabilities = {
+            label: float(prob)
+            for label, prob in zip(class_labels, proba_array)
+        }
+        confidence = float(probabilities.get(prediction, float(proba_array.max())))
+
+    return prediction, probabilities, confidence

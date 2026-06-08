@@ -7,32 +7,37 @@ from src.prediction import load_model_artifacts, predict_student_status, prepare
 from src.preprocessing import FEATURE_COLUMNS
 
 
-TITULO_APP = "Sistema de Predicción del Desempeño Estudiantil"
-SUBTITULO_APP = "Herramienta institucional de análisis predictivo académico"
-RUTA_MODELO = Path("model/best_model.pkl")
+# ── Constantes ───────────────────────────────────────────────
+
+TITULO_APP     = "Sistema de Predicción del Desempeño Estudiantil"
+SUBTITULO_APP  = "Herramienta institucional de análisis predictivo académico"
+RUTA_MODELO        = Path("model/best_model.pkl")
 RUTA_PREPROCESADOR = Path("model/preprocessor.pkl")
-CLASES_MODELO = ["Dropout", "Enrolled", "Graduate"]
+RUTA_LABEL_ENCODER = Path("model/label_encoder.pkl")   # ← NUEVO: para XGBoost
+CLASES_MODELO  = ["Dropout", "Enrolled", "Graduate"]
+TOTAL_PASOS    = 6
 
 TRADUCCION_CLASES = {
-    "Dropout": "Desertar",
+    "Dropout":  "Desertar",
     "Enrolled": "Continuar matriculado",
     "Graduate": "Graduarse",
 }
 
-# ─────────────────────────────────────────────────────────────
-# Variables finales del modelo (37 originales - 11 eliminadas)
-# Eliminadas por baja variabilidad: Educational special needs,
-#   Nacionality, International
-# Eliminadas por correlación nula con Target: Inflation rate,
-#   GDP, Unemployment rate, Curricular units 1st/2nd sem
-#   (credited), Curricular units 1st/2nd sem (without evaluations)
-# ─────────────────────────────────────────────────────────────
+TITULOS_PASOS = [
+    "Información Personal",
+    "Ingreso académico",
+    "Información familiar",
+    "Información financiera",
+    "Primer semestre",
+    "Segundo semestre",
+]
+
 COLUMNAS_MODELO = [
     "Marital status",
     "Application mode",
     "Application order",
     "Course",
-    "Daytime/evening attendance\t",
+    "Daytime/evening attendance",
     "Previous qualification",
     "Previous qualification (grade)",
     "Mother's qualification",
@@ -56,31 +61,45 @@ COLUMNAS_MODELO = [
     "Curricular units 2nd sem (grade)",
 ]
 
-# Secciones del formulario — la pestaña Economía desaparece
-# porque las 3 variables macroeconómicas fueron eliminadas del modelo
-CONTEO_SECCIONES = {
-    "Información personal": 4,
-    "Información académica de ingreso": 7,
-    "Información familiar": 4,
-    "Información financiera": 3,
-    "Rendimiento del primer semestre": 4,
-    "Rendimiento del segundo semestre": 4,
+CONTENIDO_RESULTADOS = {
+    "Dropout": {
+        "riesgo":    "Alto",
+        "estado":    "Riesgo de deserción académica",
+        "color":     "#9f2a2a",
+        "descripcion": (
+            "El estudiante presenta características asociadas con la deserción académica. "
+            "Se recomienda intervención temprana, seguimiento académico y apoyo institucional."
+        ),
+    },
+    "Enrolled": {
+        "riesgo":    "Medio",
+        "estado":    "Proyección de permanencia activa",
+        "color":     "#8a6417",
+        "descripcion": (
+            "El estudiante tiene alta probabilidad de mantenerse matriculado. "
+            "Se recomienda monitoreo académico continuo para fortalecer su progreso."
+        ),
+    },
+    "Graduate": {
+        "riesgo":    "Bajo",
+        "estado":    "Perfil asociado a graduación",
+        "color":     "#22634b",
+        "descripcion": (
+            "El estudiante presenta características asociadas con finalización académica exitosa. "
+            "El perfil sugiere condiciones favorables para la graduación."
+        ),
+    },
 }
 
 # ── Catálogos ────────────────────────────────────────────────
 
 ESTADO_CIVIL = {
-    "Soltero/a": 1,
-    "Casado/a": 2,
-    "Viudo/a": 3,
-    "Divorciado/a": 4,
-    "Unión de hecho": 5,
-    "Separado/a legalmente": 6,
+    "Soltero/a": 1, "Casado/a": 2, "Viudo/a": 3,
+    "Divorciado/a": 4, "Unión de hecho": 5, "Separado/a legalmente": 6,
 }
-
 GENERO = {"Femenino": 0, "Masculino": 1}
-SI_NO = {"No": 0, "Sí": 1}
-TURNO = {"Diurno": 1, "Nocturno": 0}
+SI_NO  = {"No": 0, "Sí": 1}
+TURNO  = {"Diurno": 1, "Nocturno": 0}
 
 MODALIDAD_SOLICITUD = {
     "Primera fase del contingente general": 1,
@@ -218,51 +237,8 @@ OCUPACIONES = {
     "Vendedor ambulante o trabajador de servicios callejeros": 195,
 }
 
-CONTENIDO_RESULTADOS = {
-    "Dropout": {
-        "riesgo": "Alto",
-        "estado": "Riesgo de deserción académica",
-        "color": "#9f2a2a",
-        "descripcion": (
-            "El estudiante presenta características asociadas con la deserción académica. "
-            "Se recomienda intervención temprana, seguimiento académico y apoyo institucional."
-        ),
-    },
-    "Enrolled": {
-        "riesgo": "Medio",
-        "estado": "Proyección de permanencia activa",
-        "color": "#8a6417",
-        "descripcion": (
-            "El estudiante tiene alta probabilidad de mantenerse matriculado. "
-            "Se recomienda monitoreo académico continuo para fortalecer su progreso."
-        ),
-    },
-    "Graduate": {
-        "riesgo": "Bajo",
-        "estado": "Perfil asociado a graduación",
-        "color": "#22634b",
-        "descripcion": (
-            "El estudiante presenta características asociadas con finalización académica exitosa. "
-            "El perfil sugiere condiciones favorables para la graduación."
-        ),
-    },
-}
 
-
-# ── Utilidades ───────────────────────────────────────────────
-
-def nombre_modelo_en_espanol(modelo: Any) -> str:
-    nombres = {
-        "LogisticRegression": "Regresión logística",
-        "RandomForestClassifier": "Bosque aleatorio",
-        "DecisionTreeClassifier": "Árbol de decisión",
-        "KNeighborsClassifier": "Vecinos más cercanos",
-        "SVC": "Máquina de vectores de soporte",
-        "GaussianNB": "Clasificador bayesiano gaussiano",
-        "GradientBoostingClassifier": "Potenciación por gradiente",
-    }
-    return nombres.get(type(modelo).__name__, "Modelo de clasificación entrenado")
-
+# ── Estilos ──────────────────────────────────────────────────
 
 def aplicar_estilos() -> None:
     st.markdown(
@@ -278,134 +254,171 @@ def aplicar_estilos() -> None:
                 --gris-900: #101828;
                 --gris-700: #344054;
                 --gris-600: #475467;
-                --borde: #d6e1ee;
+                --borde:    #d6e1ee;
                 --superficie: #ffffff;
             }
 
-            .stApp {
-                background: #f3f6fa;
-                color: var(--gris-900);
-            }
+            .stApp { background: #f3f6fa; color: var(--gris-900); }
 
             header[data-testid="stHeader"],
             div[data-testid="stToolbar"],
             div[data-testid="stDecoration"],
-            #MainMenu,
-            footer {
-                display: none;
-                visibility: hidden;
-                height: 0;
+            #MainMenu, footer {
+                display: none; visibility: hidden; height: 0;
             }
 
-            .block-container {
-                max-width: 1260px;
-                padding: 1rem 2rem 2.5rem;
-            }
+            .block-container { max-width: 1260px; padding: 1rem 2rem 2.5rem; }
 
-            .encabezado {
+            .barra-aplicacion {
+                align-items: center;
                 background: var(--azul-900);
                 border: 1px solid var(--azul-800);
                 border-radius: 8px;
-                color: #ffffff;
+                display: flex;
+                justify-content: space-between;
                 margin-bottom: 1rem;
-                padding: 1.4rem 1.5rem;
+                padding: 0.75rem 1rem;
             }
+            .marca-aplicacion { align-items: center; display: flex; gap: 0.75rem; }
+            .marca-simbolo {
+                align-items: center; background: var(--azul-700); border-radius: 8px;
+                color: #fff; display: flex; font-weight: 900;
+                height: 40px; justify-content: center; width: 40px; flex-shrink: 0;
+            }
+            .marca-texto    { color: #fff; font-size: 1rem; font-weight: 850; line-height: 1.15; }
+            .marca-subtexto { color: #9dc4e8; font-size: 0.82rem; font-weight: 600; margin-top: 0.1rem; }
 
-            .encabezado h1 { color: #ffffff; font-size: 2.1rem; letter-spacing: 0; line-height: 1.16; margin: 0; }
-            .encabezado p  { color: #d9e8f8; font-size: 1.02rem; line-height: 1.5; margin: 0.45rem 0 0; }
-
-            .tarjeta,
-            .tarjeta-seccion,
-            .tarjeta-resultado,
-            .fila-probabilidad {
+            .tarjeta, .bloque-inicio {
                 background: var(--superficie);
                 border: 1px solid var(--borde);
                 border-radius: 8px;
                 box-shadow: 0 10px 24px rgba(16,40,71,0.07);
+                padding: 1.05rem 1.1rem;
             }
+            .tarjeta      { border-top: 4px solid var(--azul-700); min-height: 142px; }
+            .bloque-inicio { min-height: 160px; }
 
-            .tarjeta { border-top: 4px solid var(--azul-700); min-height: 142px; padding: 1.05rem 1.1rem; }
-            .tarjeta h3, .tarjeta-seccion h3, .tarjeta-resultado h2 { color: var(--azul-900); letter-spacing: 0; margin: 0 0 0.45rem; }
-            .tarjeta p,  .tarjeta-seccion p,  .tarjeta-resultado p  { color: var(--gris-600); line-height: 1.5; margin: 0; }
+            .tarjeta h3, .bloque-inicio h3 { color: var(--azul-900); margin: 0 0 0.45rem; }
+            .tarjeta p,  .bloque-inicio p  { color: var(--gris-600); line-height: 1.5; margin: 0; }
 
-            .tarjeta-seccion { background: #fbfdff; margin: 0.5rem 0 1rem; padding: 1rem 1.1rem; }
-
-            div[data-testid="stMetric"] {
-                background: #ffffff;
+            .aviso-seccion {
+                background: #fbfdff;
                 border: 1px solid var(--borde);
                 border-radius: 8px;
-                box-shadow: 0 8px 18px rgba(16,40,71,0.06);
+                color: var(--gris-600);
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin-bottom: 1rem;
+                padding: 0.75rem 1rem;
+            }
+
+            .barra-progreso {
+                align-items: center;
+                background: var(--superficie);
+                border: 1px solid var(--borde);
+                border-radius: 8px;
+                display: flex;
+                gap: 0.35rem;
+                margin-bottom: 1rem;
+                padding: 0.65rem 1rem;
+            }
+            .paso-chip {
+                border-radius: 999px;
+                font-size: 0.78rem;
+                font-weight: 750;
+                padding: 0.25rem 0.7rem;
+                white-space: nowrap;
+            }
+            .paso-activo   { background: var(--azul-700); color: #fff; }
+            .paso-completo { background: var(--azul-100); color: var(--azul-900); border: 1px solid var(--borde); }
+            .paso-pendiente{ background: #f0f4f8; color: var(--gris-600); border: 1px solid var(--borde); }
+            .paso-separador{ color: var(--gris-600); font-size: 0.75rem; }
+
+            div[data-testid="stMetric"] {
+                background: #fff; border: 1px solid var(--borde);
+                border-radius: 8px; box-shadow: 0 8px 18px rgba(16,40,71,0.06);
                 padding: 0.75rem 0.9rem;
             }
-            div[data-testid="stMetric"] label                          { color: var(--gris-600); font-weight: 650; }
-            div[data-testid="stMetric"] [data-testid="stMetricValue"]  { color: var(--azul-900); font-weight: 800; }
+            div[data-testid="stMetric"] label                         { color: var(--gris-600); font-weight: 650; }
+            div[data-testid="stMetric"] [data-testid="stMetricValue"] { color: var(--azul-900); font-weight: 800; }
 
-            div[data-testid="stTabs"] button     { color: var(--azul-900); font-weight: 750; }
-            div[data-baseweb="tab-highlight"]    { background-color: var(--azul-700); }
-
-            label, .stNumberInput label, .stSelectbox label { color: var(--gris-900) !important; font-weight: 650; }
+            label, .stNumberInput label, .stSelectbox label {
+                color: var(--gris-900) !important; font-weight: 650;
+            }
 
             .stApp .stButton > button,
-            .stApp .stButton button,
             .stButton > button {
                 background: var(--azul-700);
                 border: 1px solid var(--azul-700);
                 border-radius: 7px;
                 color: #ffffff !important;
                 font-weight: 800;
-                min-height: 2.8rem;
+                min-height: 2.6rem;
                 width: 100%;
             }
             .stApp .stButton > button:hover,
-            .stButton > button:hover { background: var(--azul-800); border-color: var(--azul-800); color: #ffffff !important; }
+            .stButton > button:hover {
+                background: var(--azul-800); border-color: var(--azul-800); color: #fff !important;
+            }
 
-            .tarjeta-resultado { border-left: 7px solid var(--azul-700); margin-top: 0.75rem; padding: 1.2rem 1.25rem; }
+            .btn-secundario > button {
+                background: var(--superficie) !important;
+                border: 1px solid var(--borde) !important;
+                color: var(--azul-900) !important;
+                font-weight: 700 !important;
+            }
+            .btn-secundario > button:hover {
+                background: var(--azul-050) !important;
+                border-color: var(--azul-700) !important;
+                color: var(--azul-900) !important;
+            }
+
+            .tarjeta-resultado {
+                background: var(--superficie);
+                border: 1px solid var(--borde);
+                border-left: 7px solid var(--azul-700);
+                border-radius: 8px;
+                box-shadow: 0 10px 24px rgba(16,40,71,0.07);
+                margin-top: 0.75rem;
+                padding: 1.2rem 1.25rem;
+            }
             .etiqueta-resultado { color: var(--gris-600); font-weight: 750; margin-bottom: 0.25rem; }
+            .tarjeta-resultado h2 { color: var(--azul-900); margin: 0 0 0.25rem; }
             .nivel-riesgo {
                 background: var(--azul-100); border: 1px solid var(--borde); border-radius: 6px;
                 color: var(--azul-900); display: inline-block; font-weight: 800;
-                margin: 0.55rem 0 0.65rem; padding: 0.28rem 0.62rem;
+                margin: 0.45rem 0 0.65rem; padding: 0.25rem 0.6rem;
             }
+            .tarjeta-resultado p { color: var(--gris-600); line-height: 1.5; margin: 0; }
 
-            .fila-probabilidad { margin-bottom: 0.55rem; padding: 0.65rem 0.8rem; }
+            .fila-probabilidad {
+                background: var(--superficie); border: 1px solid var(--borde);
+                border-radius: 8px; margin-bottom: 0.55rem; padding: 0.65rem 0.8rem;
+            }
             .nombre-probabilidad { color: var(--azul-900); font-weight: 800; margin-bottom: 0.2rem; }
             .valor-probabilidad  { color: var(--gris-600); font-weight: 750; }
 
-            .barra-aplicacion {
-                align-items: center; background: #ffffff; border: 1px solid var(--borde);
-                border-radius: 8px; box-shadow: 0 8px 20px rgba(16,40,71,0.06);
-                display: flex; justify-content: space-between; margin-bottom: 1rem; padding: 0.8rem 1rem;
-            }
-            .marca-aplicacion { align-items: center; display: flex; gap: 0.75rem; }
-            .marca-simbolo {
-                align-items: center; background: var(--azul-900); border-radius: 8px;
-                color: #ffffff; display: flex; font-weight: 900; height: 42px; justify-content: center; width: 42px;
-            }
-            .marca-texto    { color: var(--azul-900); font-size: 1rem; font-weight: 850; line-height: 1.15; }
-            .marca-subtexto { color: var(--gris-600); font-size: 0.82rem; font-weight: 650; margin-top: 0.12rem; }
-
-            .bloque-inicio { background: #ffffff; border: 1px solid var(--borde); border-radius: 8px; box-shadow: 0 10px 24px rgba(16,40,71,0.07); min-height: 170px; padding: 1.15rem; }
-            .bloque-inicio h3 { color: var(--azul-900); margin: 0 0 0.45rem; }
-            .bloque-inicio p  { color: var(--gris-600); line-height: 1.5; margin: 0; }
-
-            .pantalla-inicio-cta { margin-top: 1rem; text-align: center; }
-            .pantalla-inicio-cta .stButton > button { max-width: 360px; }
-
             .pie-aplicacion {
                 background: var(--superficie); border: 1px solid var(--borde); border-radius: 8px;
-                color: var(--gris-900); display: flex; flex-wrap: wrap; gap: 0.45rem;
-                align-items: center; margin-top: 1.4rem; padding: 0.9rem 1rem;
+                display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center;
+                margin-top: 1.4rem; padding: 0.9rem 1rem;
                 box-shadow: 0 6px 18px rgba(16,40,71,0.04);
             }
-            .pie-aplicacion-contenido { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem; width: 100%; }
-            .pie-aplicacion-chip { background: var(--azul-050); border: 1px solid var(--borde); border-radius: 999px; color: var(--azul-900); display: inline-flex; font-size: 0.8rem; font-weight: 750; line-height: 1; padding: 0.32rem 0.65rem; white-space: nowrap; }
-            .pie-aplicacion-titulo { color: var(--gris-900); font-size: 0.98rem; font-weight: 850; letter-spacing: 0.2px; }
+            .pie-aplicacion-contenido {
+                display: flex; flex-wrap: wrap; justify-content: space-between;
+                align-items: center; gap: 0.75rem; width: 100%;
+            }
+            .pie-aplicacion-chip {
+                background: var(--azul-050); border: 1px solid var(--borde); border-radius: 999px;
+                color: var(--azul-900); display: inline-flex; font-size: 0.8rem;
+                font-weight: 750; line-height: 1; padding: 0.32rem 0.65rem; white-space: nowrap;
+            }
+            .pie-aplicacion-texto { color: var(--gris-700); font-size: 0.82rem; font-weight: 650; }
             .pie-aplicacion-autores { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.35rem; margin-left: auto; }
-            .pie-aplicacion-texto-footer { color: var(--gris-700); font-size: 0.82rem; font-weight: 650; letter-spacing: 0.1px; padding: 0.1rem 0; }
 
             @media (max-width: 760px) {
-                .barra-aplicacion, .pie-aplicacion { align-items: flex-start; flex-direction: column; gap: 0.75rem; }
-                .pie-aplicacion-contenido { width: 100%; }
+                .barra-aplicacion { align-items: flex-start; flex-direction: column; gap: 0.75rem; }
+                .barra-progreso   { flex-wrap: wrap; }
             }
         </style>
         """,
@@ -416,347 +429,238 @@ def aplicar_estilos() -> None:
 # ── Carga del modelo ─────────────────────────────────────────
 
 @st.cache_resource(show_spinner=False)
-def load_model() -> tuple[Any, Any]:
-    return load_model_artifacts(RUTA_MODELO, RUTA_PREPROCESADOR)
+def load_model() -> tuple[Any, Any, Any]:
+    # ← CORREGIDO: devuelve 3 valores (modelo, preprocesador, label_encoder)
+    return load_model_artifacts(RUTA_MODELO, RUTA_PREPROCESADOR, RUTA_LABEL_ENCODER)
+
+
+def validar_esquema(preprocesador: Any) -> None:
+    columnas_esperadas = list(getattr(preprocesador, "feature_names_in_", COLUMNAS_MODELO))
+    if len(columnas_esperadas) != len(COLUMNAS_MODELO):
+        raise ValueError(
+            f"El preprocesador espera {len(columnas_esperadas)} variables; "
+            f"la aplicación provee {len(COLUMNAS_MODELO)}."
+        )
+    faltantes = [c for c in columnas_esperadas if c not in COLUMNAS_MODELO]
+    sobrantes  = [c for c in COLUMNAS_MODELO  if c not in columnas_esperadas]
+    if faltantes or sobrantes:
+        raise ValueError(
+            f"Esquema no coincide. Faltantes: {faltantes}. Sobrantes: {sobrantes}."
+        )
 
 
 # ── Helpers de formulario ────────────────────────────────────
 
-def selector_categoria(etiqueta: str, opciones: dict[str, int], ayuda: str, valor_inicial: str | None = None) -> int:
+def selector(etiqueta: str, opciones: dict[str, int], ayuda: str, default: str | None = None) -> int:
     etiquetas = list(opciones.keys())
-    indice = etiquetas.index(valor_inicial) if valor_inicial in opciones else 0
-    seleccion = st.selectbox(etiqueta, etiquetas, index=indice, help=ayuda)
-    return opciones[seleccion]
+    idx = etiquetas.index(default) if default in opciones else 0
+    return opciones[st.selectbox(etiqueta, etiquetas, index=idx, help=ayuda)]
 
 
-def entrada_entera(etiqueta: str, valor: int, minimo: int, maximo: int, ayuda: str) -> int:
+def entero(etiqueta: str, valor: int, minimo: int, maximo: int, ayuda: str) -> int:
     return int(st.number_input(etiqueta, min_value=minimo, max_value=maximo, value=valor, step=1, help=ayuda))
 
 
-def entrada_decimal(etiqueta: str, valor: float, minimo: float, maximo: float, ayuda: str, paso: float = 0.1) -> float:
+def decimal(etiqueta: str, valor: float, minimo: float, maximo: float, ayuda: str, paso: float = 0.1) -> float:
     return float(st.number_input(etiqueta, min_value=minimo, max_value=maximo, value=valor, step=paso, help=ayuda))
 
 
-# ── Formulario ───────────────────────────────────────────────
+# ── Secciones del formulario ─────────────────────────────────
 
-def create_input_form() -> tuple[dict[str, Any], bool]:
-    """
-    Formulario con las 26 variables del modelo entrenado.
-
-    Variables eliminadas respecto al dataset original (no aparecen aquí):
-      · Educational special needs  — valor dominante 98.8 %, varianza casi cero
-      · Nacionality                — valor dominante 97.5 %, varianza casi cero
-      · International              — valor dominante 97.5 %, varianza casi cero
-      · Unemployment rate          — correlación con Target < 0.05
-      · Inflation rate             — correlación con Target < 0.05
-      · GDP                        — correlación con Target < 0.05
-      · Curricular units 1st/2nd sem (credited)          — correlación < 0.05, ~88 % en cero
-      · Curricular units 1st/2nd sem (without evaluations) — correlación < 0.05, ~93 % en cero
-    """
-    valores: dict[str, Any] = {}
-    generar_prediccion = False
-
-    pestanas = st.tabs([
-        "Personal",
-        "Ingreso",
-        "Familiar",
-        "Financiera",
-        "Primer semestre",
-        "Segundo semestre",
-    ])
-
-    # ── Pestaña 0: Personal ──────────────────────────────────
-    with pestanas[0]:
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            valores["Marital status"] = selector_categoria(
-                "Estado civil", ESTADO_CIVIL,
-                "Situación civil actual del estudiante.", "Soltero/a",
-            )
-        with col2:
-            valores["Gender"] = selector_categoria(
-                "Género", GENERO,
-                "Género registrado del estudiante.", "Femenino",
-            )
-        with col3:
-            valores["Age at enrollment"] = entrada_entera(
-                "Edad al momento de la matrícula", 20, 15, 80,
-                "Edad del estudiante cuando ingresó a la universidad.",
-            )
-        with col4:
-            valores["Displaced"] = selector_categoria(
-                "Desplazado o foráneo", SI_NO,
-                "Indica si el estudiante vive fuera de su municipio de origen para estudiar.", "No",
-            )
-
-    # ── Pestaña 1: Ingreso ───────────────────────────────────
-    with pestanas[1]:
-        with st.expander("Solicitud, carrera y admisión", expanded=True):
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                valores["Application mode"] = selector_categoria(
-                    "Modalidad de solicitud de ingreso", MODALIDAD_SOLICITUD,
-                    "Tipo de proceso mediante el cual el estudiante ingresó a la institución.",
-                    "Segunda fase del contingente general",
-                )
-                valores["Application order"] = entrada_entera(
-                    "Orden de preferencia de la solicitud", 1, 0, 9,
-                    "Posición en la que el estudiante eligió esta carrera al aplicar.",
-                )
-                valores["Course"] = selector_categoria(
-                    "Carrera", CARRERAS,
-                    "Carrera o programa académico seleccionado por el estudiante.", "Turismo",
-                )
-            with col2:
-                valores["Daytime/evening attendance\t"] = selector_categoria(
-                    "Turno de asistencia", TURNO,
-                    "Horario principal de asistencia del estudiante.", "Diurno",
-                )
-                valores["Previous qualification"] = selector_categoria(
-                    "Nivel de calificación previa", CALIFICACION_PREVIA,
-                    "Nivel educativo alcanzado antes del ingreso a la universidad.",
-                    "Educación secundaria",
-                )
-            with col3:
-                valores["Previous qualification (grade)"] = entrada_decimal(
-                    "Nota de calificación previa", 130.0, 0.0, 200.0,
-                    "Calificación obtenida en la formación previa.",
-                )
-                valores["Admission grade"] = entrada_decimal(
-                    "Nota de admisión", 130.0, 0.0, 200.0,
-                    "Calificación obtenida en el proceso de admisión.",
-                )
-
-    # ── Pestaña 2: Familiar ──────────────────────────────────
-    with pestanas[2]:
-        col1, col2 = st.columns(2)
-        with col1:
-            valores["Mother's qualification"] = selector_categoria(
-                "Nivel educativo de la madre", NIVELES_EDUCATIVOS,
-                "Categoría educativa registrada para la madre.",
-                "Educación básica, tercer ciclo",
-            )
-            valores["Mother's occupation"] = selector_categoria(
-                "Ocupación de la madre", OCUPACIONES,
-                "Actividad laboral registrada para la madre.",
-                "Trabajador de servicios personales, seguridad o ventas",
-            )
-        with col2:
-            valores["Father's qualification"] = selector_categoria(
-                "Nivel educativo del padre", NIVELES_EDUCATIVOS,
-                "Categoría educativa registrada para el padre.", "Otro, 11.º año",
-            )
-            valores["Father's occupation"] = selector_categoria(
-                "Ocupación del padre", OCUPACIONES,
-                "Actividad laboral registrada para el padre.", "Trabajador no calificado",
-            )
-
-    # ── Pestaña 3: Financiera ────────────────────────────────
-    with pestanas[3]:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            valores["Debtor"] = selector_categoria(
-                "Deudor", SI_NO,
-                "Indica si existen deudas pendientes con la institución.", "No",
-            )
-        with col2:
-            valores["Tuition fees up to date"] = selector_categoria(
-                "Matrícula al día", SI_NO,
-                "Indica si el estudiante está al día con sus pagos.", "Sí",
-            )
-        with col3:
-            valores["Scholarship holder"] = selector_categoria(
-                "Becado", SI_NO,
-                "Indica si recibe una beca académica.", "No",
-            )
-
-    # ── Pestaña 4: Primer semestre ───────────────────────────
-    # Se excluyen (credited) y (without evaluations): correlación < 0.05 con Target
-    with pestanas[4]:
-        st.markdown(
-            """
-            <div class="tarjeta-seccion">
-                <p>Las unidades <strong>acreditadas</strong> y <strong>sin evaluación</strong>
-                fueron eliminadas del modelo por tener correlación casi nula con la situación
-                final del estudiante y más del 87–93 % de sus valores en cero.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            valores["Curricular units 1st sem (enrolled)"] = entrada_entera(
-                "Unidades matriculadas", 6, 0, 40,
-                "Unidades curriculares inscritas durante el primer semestre.",
-            )
-        with col2:
-            valores["Curricular units 1st sem (evaluations)"] = entrada_entera(
-                "Evaluaciones realizadas", 6, 0, 80,
-                "Número de evaluaciones realizadas durante el primer semestre.",
-            )
-        with col3:
-            valores["Curricular units 1st sem (approved)"] = entrada_entera(
-                "Unidades aprobadas", 5, 0, 40,
-                "Unidades curriculares aprobadas en el primer semestre.",
-            )
-        with col4:
-            valores["Curricular units 1st sem (grade)"] = entrada_decimal(
-                "Nota promedio", 12.0, 0.0, 20.0,
-                "Promedio académico obtenido durante el primer semestre.",
-            )
-
-    # ── Pestaña 5: Segundo semestre ──────────────────────────
-    with pestanas[5]:
-        st.markdown(
-            """
-            <div class="tarjeta-seccion">
-                <p>Las unidades <strong>acreditadas</strong> y <strong>sin evaluación</strong>
-                fueron eliminadas del modelo por tener correlación casi nula con la situación
-                final del estudiante y más del 87–93 % de sus valores en cero.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            valores["Curricular units 2nd sem (enrolled)"] = entrada_entera(
-                "Unidades matriculadas", 6, 0, 40,
-                "Unidades curriculares inscritas durante el segundo semestre.",
-            )
-        with col2:
-            valores["Curricular units 2nd sem (evaluations)"] = entrada_entera(
-                "Evaluaciones realizadas", 6, 0, 80,
-                "Número de evaluaciones realizadas durante el segundo semestre.",
-            )
-        with col3:
-            valores["Curricular units 2nd sem (approved)"] = entrada_entera(
-                "Unidades aprobadas", 5, 0, 40,
-                "Unidades curriculares aprobadas en el segundo semestre.",
-            )
-        with col4:
-            valores["Curricular units 2nd sem (grade)"] = entrada_decimal(
-                "Nota promedio", 12.0, 0.0, 20.0,
-                "Promedio académico obtenido durante el segundo semestre.",
-            )
-
-        st.write("")
-        st.divider()
-        generar_prediccion = st.button("Generar predicción", type="primary")
-
-    return valores, generar_prediccion
+def seccion_personal() -> dict[str, Any]:
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        ms = selector("Estado civil", ESTADO_CIVIL, "Situación civil actual.", "Soltero/a")
+    with col2:
+        ge = selector("Género", GENERO, "Género registrado.", "Femenino")
+    with col3:
+        ae = entero("Edad al matricularse", 20, 15, 80, "Edad al ingresar a la universidad.")
+    with col4:
+        di = selector("Desplazado / foráneo", SI_NO, "Vive fuera de su municipio de origen.", "No")
+    return {
+        "Marital status":    ms,
+        "Gender":            ge,
+        "Age at enrollment": ae,
+        "Displaced":         di,
+    }
 
 
-# ── Pantallas ────────────────────────────────────────────────
-
-def mostrar_header_aplicacion() -> None:
-    st.markdown(
-        """
-        <div class="barra-aplicacion">
-            <div class="marca-aplicacion">
-                <div class="marca-simbolo">SP</div>
-                <div>
-                    <div class="marca-texto">Predicción de Rendimiento Académico</div>
-                    <div class="marca-subtexto">Inteligencia Artificial, 2026</div>
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def mostrar_footer_aplicacion() -> None:
-    st.markdown(
-        """
-        <div class="pie-aplicacion">
-            <div class="pie-aplicacion-contenido">
-                <span class="pie-aplicacion-texto-footer">Student Performance Prediction — Proyecto Inteligencia Artificial</span>
-                <div class="pie-aplicacion-autores">
-                    <span class="pie-aplicacion-chip">Jordan Ortiz Molina</span>
-                    <span class="pie-aplicacion-chip">Yenifer Mata Flores</span>
-                    <span class="pie-aplicacion-chip">Deyaneira Altamirano Cordero</span>
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def mostrar_pantalla_inicio(modelo: Any, preprocesador: Any) -> None:
-    mostrar_header_aplicacion()
-    st.markdown(
-        """
-        <div class="tarjeta-seccion" style="margin-bottom:0.8rem; padding:0.8rem 1rem;">
-            <p style="margin:0; color:var(--gris-600);">
-                Este sistema estima el estado académico probable de un estudiante:
-                desertar, seguir matriculado o graduarse, usando las 26 variables
-                seleccionadas durante el preprocesamiento del modelo.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.write("")
+def seccion_ingreso() -> dict[str, Any]:
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown(
-            """
-            <div class="bloque-inicio">
-                <h3>Qué hace el sistema</h3>
-                <p>Recibe información personal, académica, familiar y financiera
-                del estudiante para generar una predicción de desempeño académico.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        am = selector("Modalidad de solicitud", MODALIDAD_SOLICITUD,
+                      "Proceso de admisión utilizado.", "Segunda fase del contingente general")
+        ao = entero("Orden de preferencia", 1, 0, 9, "Posición de esta carrera en la solicitud.")
+        co = selector("Carrera", CARRERAS, "Programa académico seleccionado.", "Turismo")
     with col2:
+        da = selector("Turno", TURNO, "Horario de asistencia.", "Diurno")
+        pq = selector("Calificación previa", CALIFICACION_PREVIA,
+                      "Nivel educativo previo al ingreso.", "Educación secundaria")
+    with col3:
+        pg = decimal("Nota de calificación previa", 130.0, 0.0, 200.0, "Calificación en la formación previa.")
+        ag = decimal("Nota de admisión", 130.0, 0.0, 200.0, "Calificación en el proceso de admisión.")
+    return {
+        "Application mode":                am,
+        "Application order":               ao,
+        "Course":                          co,
+        "Daytime/evening attendance":      da,
+        "Previous qualification":          pq,
+        "Previous qualification (grade)":  pg,
+        "Admission grade":                 ag,
+    }
+
+
+def seccion_familiar() -> dict[str, Any]:
+    col1, col2 = st.columns(2)
+    with col1:
+        mq = selector("Nivel educativo de la madre", NIVELES_EDUCATIVOS,
+                      "Categoría educativa de la madre.", "Educación básica, tercer ciclo")
+        mo = selector("Ocupación de la madre", OCUPACIONES,
+                      "Actividad laboral de la madre.", "Trabajador de servicios personales, seguridad o ventas")
+    with col2:
+        fq = selector("Nivel educativo del padre", NIVELES_EDUCATIVOS,
+                      "Categoría educativa del padre.", "Otro, 11.º año")
+        fo = selector("Ocupación del padre", OCUPACIONES,
+                      "Actividad laboral del padre.", "Trabajador no calificado")
+    return {
+        "Mother's qualification": mq,
+        "Mother's occupation":    mo,
+        "Father's qualification": fq,
+        "Father's occupation":    fo,
+    }
+
+
+def seccion_financiera() -> dict[str, Any]:
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        de = selector("Deudor", SI_NO, "Deudas pendientes con la institución.", "No")
+    with col2:
+        tf = selector("Matrícula al día", SI_NO, "Pagos de matrícula al corriente.", "Sí")
+    with col3:
+        sh = selector("Becado", SI_NO, "Recibe beca académica.", "No")
+    return {
+        "Debtor":                  de,
+        "Tuition fees up to date": tf,
+        "Scholarship holder":      sh,
+    }
+
+
+def seccion_semestre(n: int) -> dict[str, Any]:
+    label = "1st" if n == 1 else "2nd"
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        en = entero("Unidades matriculadas", 6, 0, 40, f"Unidades inscritas en el {n}.er semestre.")
+    with col2:
+        ev = entero("Evaluaciones realizadas", 6, 0, 80, f"Evaluaciones en el {n}.er semestre.")
+    with col3:
+        ap = entero("Unidades aprobadas", 5, 0, 40, f"Unidades aprobadas en el {n}.er semestre.")
+    with col4:
+        gr = decimal("Nota promedio", 12.0, 0.0, 20.0, f"Promedio del {n}.er semestre.")
+    return {
+        f"Curricular units {label} sem (enrolled)":    en,
+        f"Curricular units {label} sem (evaluations)": ev,
+        f"Curricular units {label} sem (approved)":    ap,
+        f"Curricular units {label} sem (grade)":       gr,
+    }
+
+
+SECCIONES: list[Any] = [
+    seccion_personal,
+    seccion_ingreso,
+    seccion_familiar,
+    seccion_financiera,
+    lambda: seccion_semestre(1),
+    lambda: seccion_semestre(2),
+]
+
+
+# ── Componentes de UI ────────────────────────────────────────
+
+def nombre_modelo(modelo: Any) -> str:
+    nombres = {
+        "LogisticRegression":         "Regresión logística",
+        "RandomForestClassifier":     "Bosque aleatorio",
+        "XGBClassifier":              "XGBoost",
+        "DecisionTreeClassifier":     "Árbol de decisión",
+        "KNeighborsClassifier":       "Vecinos más cercanos",
+        "SVC":                        "Máquina de vectores de soporte",
+        "GradientBoostingClassifier": "Potenciación por gradiente",
+    }
+    return nombres.get(type(modelo).__name__, "Modelo de clasificación entrenado")
+
+
+def mostrar_header(con_volver: bool = False) -> None:
+    col_marca, col_btn = st.columns([5, 1]) if con_volver else (st.columns([1])[0], None)
+    with col_marca:
         st.markdown(
             """
-            <div class="bloque-inicio">
-                <h3>Variables utilizadas</h3>
-                <p>Se usan 26 de las 37 variables originales del dataset UCI.
-                Las 11 restantes fueron eliminadas por baja variabilidad o
-                correlación nula con la situación final del estudiante.</p>
+            <div class="barra-aplicacion">
+                <div class="marca-aplicacion">
+                    <div class="marca-simbolo">SP</div>
+                    <div>
+                        <div class="marca-texto">Predicción de Rendimiento Académico</div>
+                        <div class="marca-subtexto">Inteligencia Artificial · 2026</div>
+                    </div>
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-    with col3:
-        st.markdown(
-            f"""
-            <div class="bloque-inicio">
-                <h3>Modelo seleccionado</h3>
-                <p>{nombre_modelo_en_espanol(modelo).capitalize()}, elegido por ser el único
-                sin overfitting significativo (diferencia train-val de 0.04) y por tener
-                el mejor F1 macro en datos no vistos (0.7274).</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("<div class='pantalla-inicio-cta'>", unsafe_allow_html=True)
-    if st.button("Ir al formulario de predicción", type="primary"):
-        st.session_state["pantalla"] = "prediccion"
-        st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    mostrar_footer_aplicacion()
+    if con_volver and col_btn is not None:
+        with col_btn:
+            st.write("")
+            st.markdown('<div class="btn-secundario">', unsafe_allow_html=True)
+            if st.button("Volver a Inicio", key="btn_volver_header"):
+                st.session_state["pantalla"] = "inicio"
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
 
 
-def display_results(prediccion: str, probabilidades: dict[str, float], confianza: float) -> None:
-    contenido = CONTENIDO_RESULTADOS[prediccion]
+def mostrar_barra_progreso(paso_actual: int) -> None:
+    chips = ""
+    for i, titulo in enumerate(TITULOS_PASOS):
+        if i < paso_actual:
+            cls = "paso-completo"
+        elif i == paso_actual:
+            cls = "paso-activo"
+        else:
+            cls = "paso-pendiente"
+        chips += f'<span class="paso-chip {cls}">{i + 1}. {titulo}</span>'
+        if i < len(TITULOS_PASOS) - 1:
+            chips += '<span class="paso-separador">›</span>'
+    st.markdown(f'<div class="barra-progreso">{chips}</div>', unsafe_allow_html=True)
+
+
+#def mostrar_footer() -> None:
+#    st.markdown(
+#        """
+#        <div class="pie-aplicacion">
+#            <div class="pie-aplicacion-contenido">
+#                <span class="pie-aplicacion-texto">Proyecto Inteligencia Artificial, Predicción de rendimiento académico</span>
+#                <div class="pie-aplicacion-autores">
+#                    <span class="pie-aplicacion-chip">Jordan Ortiz Molina</span>
+#                    <span class="pie-aplicacion-chip">Yenifer Mata Flores</span>
+#                    <span class="pie-aplicacion-chip">Deyaneira Altamirano Cordero</span>
+#                </div>
+#            </div>
+#        </div>
+#        """,
+#        unsafe_allow_html=True,
+#    )
+
+
+def mostrar_resultados(prediccion: str, probabilidades: dict[str, float], confianza: float) -> None:
+    contenido     = CONTENIDO_RESULTADOS[prediccion]
     prediccion_es = TRADUCCION_CLASES[prediccion]
 
     st.subheader("Resultados de la predicción")
     st.markdown(
         f"""
-        <div class="tarjeta-resultado" style="border-left-color: {contenido["color"]};">
-            <div class="etiqueta-resultado">{contenido["estado"]}</div>
+        <div class="tarjeta-resultado" style="border-left-color:{contenido['color']};">
+            <div class="etiqueta-resultado">{contenido['estado']}</div>
             <h2>{prediccion_es}</h2>
-            <div class="nivel-riesgo">Nivel de riesgo: {contenido["riesgo"]}</div>
-            <p>{contenido["descripcion"]}</p>
+            <div class="nivel-riesgo">Nivel de riesgo: {contenido['riesgo']}</div>
+            <p>{contenido['descripcion']}</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -764,7 +668,7 @@ def display_results(prediccion: str, probabilidades: dict[str, float], confianza
 
     st.write("")
     col1, col2 = st.columns(2)
-    col1.metric("Clase predicha", prediccion_es)
+    col1.metric("Clase predicha",     prediccion_es)
     col2.metric("Nivel de confianza", f"{confianza * 100:.2f}%")
 
     st.write("")
@@ -783,26 +687,135 @@ def display_results(prediccion: str, probabilidades: dict[str, float], confianza
         st.progress(min(max(prob, 0.0), 1.0))
 
 
-# ── Validación del esquema ───────────────────────────────────
+# ── Pantallas ────────────────────────────────────────────────
 
-def validar_esquema(preprocesador: Any) -> None:
-    """
-    Verifica que el preprocesador cargado espere exactamente las 26
-    variables del modelo entrenado, no las 33 originales de la app anterior.
-    """
-    columnas_esperadas = list(getattr(preprocesador, "feature_names_in_", COLUMNAS_MODELO))
-    if len(columnas_esperadas) != len(COLUMNAS_MODELO):
-        raise ValueError(
-            f"El preprocesador espera {len(columnas_esperadas)} variables; "
-            f"la aplicación provee {len(COLUMNAS_MODELO)}."
+def pantalla_inicio(modelo: Any, preprocesador: Any) -> None:
+    mostrar_header(con_volver=False)
+    st.markdown(
+        """
+        <div class="aviso-seccion">
+            Este sistema permite predecir el estado académico de un estudiante univesitario, clasificando entre desertar,
+            seguir matriculado o graduarse.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(
+            """
+            <div class="bloque-inicio">
+                <h3>¿Qué hace el sistema?</h3>
+                <p>Recibe información personal, académica, familiar, financiera y económica
+                del estudiante para generar una predicción de desempeño académico.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
-    faltantes = [c for c in columnas_esperadas if c not in COLUMNAS_MODELO]
-    sobrantes  = [c for c in COLUMNAS_MODELO  if c not in columnas_esperadas]
-    if faltantes or sobrantes:
-        raise ValueError(
-            "El esquema de la aplicación no coincide con el preprocesador entrenado. "
-            f"Faltantes: {faltantes}. Sobrantes: {sobrantes}."
+    with col2:
+        st.markdown(
+            """
+            <div class="bloque-inicio">
+                <h3>¿Para qué funciona?</h3>
+                <p>Su propósito es apoyar el análisis institucional y facilitar la identificación temprana de perfiles que podrían requerir acompañamiento académico</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
+    with col3:
+        st.markdown(
+            f"""
+             <div class="bloque-inicio">
+                <h3>¿Cómo se entrenó?</h3>
+                <p>Se utilizó el dataset UCI de deserción y éxito académico para entrenar un modelo mediante regresión logística.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    st.write("")
+    _, col_cta, _ = st.columns([2, 1, 2])
+    with col_cta:
+        if st.button("Ir al formulario →", type="primary"):
+            st.session_state["pantalla"] = "formulario"
+            st.session_state["paso"]     = 0
+            st.session_state["valores"]  = {}
+            st.rerun()
+    #mostrar_footer()
+
+
+def pantalla_formulario(modelo: Any, preprocesador: Any) -> None:
+    if "paso"    not in st.session_state: st.session_state["paso"]    = 0
+    if "valores" not in st.session_state: st.session_state["valores"] = {}
+
+    paso = st.session_state["paso"]
+    mostrar_header(con_volver=True)
+    mostrar_barra_progreso(paso)
+
+    st.subheader(f"Paso {paso + 1} de {TOTAL_PASOS} — {TITULOS_PASOS[paso]}")
+    valores_paso = SECCIONES[paso]()
+
+    st.write("")
+    st.divider()
+
+    es_ultimo = paso == TOTAL_PASOS - 1
+
+    if paso == 0:
+        _, col_sig, _ = st.columns([3, 1, 0.01])
+    else:
+        col_ant, _, col_sig = st.columns([1, 2, 1])
+        with col_ant:
+            st.markdown('<div class="btn-secundario">', unsafe_allow_html=True)
+            if st.button("← Anterior", key="btn_anterior"):
+                st.session_state["valores"].update(valores_paso)
+                st.session_state["paso"] -= 1
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    with col_sig:
+        etiqueta_sig = "Generar predicción" if es_ultimo else "Siguiente →"
+        if st.button(etiqueta_sig, type="primary", key="btn_siguiente"):
+            st.session_state["valores"].update(valores_paso)
+            if es_ultimo:
+                st.session_state["pantalla"] = "resultado"
+            else:
+                st.session_state["paso"] += 1
+            st.rerun()
+
+    #mostrar_footer()
+
+
+def pantalla_resultado(modelo: Any, preprocesador: Any, label_encoder: Any) -> None:
+    # ← CORREGIDO: recibe label_encoder como parámetro
+    mostrar_header(con_volver=True)
+
+    valores = st.session_state.get("valores", {})
+
+    try:
+        datos = prepare_input_data(valores, feature_columns=COLUMNAS_MODELO)
+        # ← CORREGIDO: pasa label_encoder a predict_student_status
+        prediccion, probabilidades, confianza = predict_student_status(
+            modelo, preprocesador, datos,
+            feature_columns=COLUMNAS_MODELO,
+            label_encoder=label_encoder,
+        )
+        mostrar_resultados(prediccion, probabilidades, confianza)
+    except ValueError as exc:
+        st.error(str(exc))
+    except Exception:
+        st.error("No fue posible generar la predicción. Verifique los datos ingresados.")
+
+    st.write("")
+    _, col_nuevo, _ = st.columns([2, 1, 2])
+    with col_nuevo:
+        st.markdown('<div class="btn-secundario">', unsafe_allow_html=True)
+        if st.button("Nueva predicción", key="btn_nuevo"):
+            st.session_state["pantalla"] = "formulario"
+            st.session_state["paso"]     = 0
+            st.session_state["valores"]  = {}
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    #mostrar_footer()
 
 
 # ── Main ─────────────────────────────────────────────────────
@@ -816,52 +829,26 @@ def main() -> None:
     aplicar_estilos()
 
     try:
-        modelo, preprocesador = load_model()
+        # ← CORREGIDO: desempaqueta 3 valores
+        modelo, preprocesador, label_encoder = load_model()
         validar_esquema(preprocesador)
     except Exception as exc:
-        st.error("No fue posible cargar correctamente el modelo entrenado o su esquema de datos.")
+        st.error("No fue posible cargar el modelo o su esquema de datos.")
         st.error(str(exc))
         return
 
     if "pantalla" not in st.session_state:
         st.session_state["pantalla"] = "inicio"
 
-    if st.session_state["pantalla"] == "inicio":
-        mostrar_pantalla_inicio(modelo, preprocesador)
-        return
+    pantalla = st.session_state["pantalla"]
 
-    mostrar_header_aplicacion()
-    st.markdown(
-        """
-        <div class="tarjeta-seccion" style="margin-bottom:0.8rem; padding:0.8rem 1rem;">
-            <p style="margin:0; color:var(--gris-600);">Complete el formulario y presione
-            <strong>Generar predicción</strong> al final de la última pestaña.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    valores, generar_prediccion = create_input_form()
-
-    st.write("")
-    if generar_prediccion:
-        try:
-            datos = prepare_input_data(valores)
-            prediccion, probabilidades, confianza = predict_student_status(modelo, preprocesador, datos)
-            display_results(prediccion, probabilidades, confianza)
-        except ValueError as exc:
-            st.error(str(exc))
-        except Exception:
-            st.error("No fue posible generar la predicción. Revise los datos ingresados e inténtelo nuevamente.")
-
-    volver_col, _ = st.columns([1, 4])
-    with volver_col:
-        if st.button("Volver al inicio"):
-            st.session_state["pantalla"] = "inicio"
-            st.rerun()
-
-    st.write("")
-    mostrar_footer_aplicacion()
+    if pantalla == "inicio":
+        pantalla_inicio(modelo, preprocesador)
+    elif pantalla == "formulario":
+        pantalla_formulario(modelo, preprocesador)
+    elif pantalla == "resultado":
+        # ← CORREGIDO: pasa label_encoder a la pantalla de resultado
+        pantalla_resultado(modelo, preprocesador, label_encoder)
 
 
 if __name__ == "__main__":
