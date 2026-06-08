@@ -14,8 +14,6 @@ from sklearn.metrics import (
 
 
 def classification_metrics(y_true: Iterable[str], y_pred: Iterable[str]) -> dict[str, float]:
-	"""Compute the standard classification metrics requested in the project."""
-
 	return {
 		"accuracy": float(accuracy_score(y_true, y_pred)),
 		"precision_macro": float(precision_score(y_true, y_pred, average="macro", zero_division=0)),
@@ -34,8 +32,6 @@ def confusion_matrix_frame(
 	y_pred: Iterable[str],
 	labels: list[str],
 ) -> pd.DataFrame:
-	"""Return the confusion matrix as a labeled DataFrame."""
-
 	matrix = confusion_matrix(y_true, y_pred, labels=labels)
 	row_labels = [f"actual_{label}" for label in labels]
 	column_labels = [f"pred_{label}" for label in labels]
@@ -46,8 +42,6 @@ def feature_importance_frame(
 	model: object,
 	feature_names: Iterable[str],
 ) -> pd.DataFrame:
-	"""Estimate feature importance from tree-based models or linear coefficients."""
-
 	names = list(feature_names)
 	if hasattr(model, "feature_importances_"):
 		values = np.asarray(getattr(model, "feature_importances_"), dtype=float)
@@ -74,8 +68,6 @@ def evaluate_predictions(
 	y_pred: Iterable[str],
 	labels: list[str],
 ) -> dict[str, object]:
-	"""Bundle metrics and confusion matrix into a single result dictionary."""
-
 	metrics = classification_metrics(y_true, y_pred)
 	matrix = confusion_matrix_frame(y_true, y_pred, labels=labels)
 	return {"metrics": metrics, "confusion_matrix": matrix}
